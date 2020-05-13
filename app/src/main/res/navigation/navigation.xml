@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation"
+    app:startDestination="@id/usageStatistics">
+
+    <fragment
+        android:id="@+id/usageStatistics"
+        android:name="com.meicm.cas.digitalwellbeing.UsageStatisticsFragment"
+        android:label="fragment_usage_statistics"
+        tools:layout="@layout/fragment_usage_statistics" />
+</navigation>
