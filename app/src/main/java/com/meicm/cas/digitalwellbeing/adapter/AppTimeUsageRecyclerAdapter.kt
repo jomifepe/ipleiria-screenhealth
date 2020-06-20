@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.meicm.cas.digitalwellbeing.R
 import kotlinx.android.synthetic.main.app_time_usage_list_item.view.*
+import java.util.concurrent.TimeUnit
 
 class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
     BaseRecyclerAdapter<UsageStats, AppTimeUsageRecyclerAdapter.ViewHolder>(onShortClick) {
@@ -29,6 +30,11 @@ class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val data = list[position]
+
+//        val seconds: Long = TimeUnit.MILLISECONDS.toHours(data.totalTimeInForeground)
+//        val minutes: Long = TimeUnit.MILLISECONDS.toMinutes(data.totalTimeInForeground)
+//        val hours: Long = TimeUnit.MILLISECONDS.toSeconds(data.totalTimeInForeground)
+
         val seconds: Long = (data.totalTimeInForeground / 1000) % 60
         val minutes: Long = (data.totalTimeInForeground / (1000 * 60)) % 60
         val hours: Long = (data.totalTimeInForeground / (1000 * 60 * 60))

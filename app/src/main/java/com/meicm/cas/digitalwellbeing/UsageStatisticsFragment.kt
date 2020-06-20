@@ -22,6 +22,7 @@ import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
 import com.meicm.cas.digitalwellbeing.util.Const
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class UsageStatisticsFragment : Fragment() {
     lateinit var binding: FragmentUsageStatisticsBinding
@@ -86,10 +87,8 @@ class UsageStatisticsFragment : Fragment() {
             if (eventStats.isNotEmpty()) {
                 Log.d(Const.LOG_TAG, "Event codes: https://developer.android.com/reference/kotlin/android/app/usage/UsageEvents.Event")
                 eventStats.forEach {
-                    val seconds: Long = (it.totalTime / 1000) % 60
-                    val minutes: Long = (it.totalTime / (1000 * 60)) % 60
-                    val hours: Long = (it.totalTime / (1000 * 60 * 60))
-                    Log.d(Const.LOG_TAG, "Event: ${it.eventType} Count: ${it.count} Total Time: $hours h $minutes min $seconds s")
+                    val hms = getHMS(it.totalTime)
+                    Log.d(Const.LOG_TAG, "Event: ${it.eventType} Count: ${it.count} Total_Time: ${hms.first} h ${hms.second} min ${hms.third} s")
                 }
             } else {
                 Log.d(Const.LOG_TAG, "No event stats found")
@@ -103,10 +102,13 @@ class UsageStatisticsFragment : Fragment() {
             var totalTime: Long = 0L
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 queryUsageStats.forEach { totalTime += it.totalTimeVisible }
-                val seconds: Long = (totalTime / 1000) % 60
-                val minutes: Long = (totalTime / (1000 * 60)) % 60
-                val hours: Long = (totalTime / (1000 * 60 * 60))
-                val totalTimeString = "$hours h $minutes min $seconds s"
+                val hsm = getHMS(totalTime)
+                val totalTimeString = "${hsm.first} h ${hsm.second} min ${hsm.third} s"
+                binding.tvTotalScreenTime.text = totalTimeString
+            } else {
+                queryUsageStats.forEach { totalTime += it.totalTimeInForeground }
+                val hsm = getHMS(totalTime)
+                val totalTimeString = "${hsm.first} h ${hsm.second} min ${hsm.third} s"
                 binding.tvTotalScreenTime.text = totalTimeString
             }
 
@@ -128,5 +130,17 @@ class UsageStatisticsFragment : Fragment() {
         } catch (e: PackageManager.NameNotFoundException) {
             return false
         }
+    }
+
+    private fun getHMS(timeInMillis: Long): Triple<Long, Long, Long> {
+        val seconds: Long = (timeInMillis / 1000) % 60
+        val minutes: Long = (timeInMillis / (1000 * 60)) % 60
+        val hours: Long = (timeInMillis / (1000 * 60 * 60))
+
+        return Triple(hours, minutes, seconds)
+
+//        return Triple(TimeUnit.MILLISECONDS.toHours(timeInMillis),
+//            TimeUnit.MILLISECONDS.toMinutes(timeInMillis),
+//            TimeUnit.MILLISECONDS.toSeconds(timeInMillis))
     }
 }
