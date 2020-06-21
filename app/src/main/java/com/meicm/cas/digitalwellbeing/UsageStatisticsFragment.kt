@@ -151,7 +151,7 @@ class UsageStatisticsFragment: Fragment() {
         if (stats.isNotEmpty()) {
 //            val stats = aggregateStats.values
             var listUsageStats: List<UsageStats> = stats.filter {
-                it.totalTimeInForeground > 0 && startTime.timeInMillis < it.lastTimeUsed
+                it.totalTimeInForeground > 0 && startTime.timeInMillis <= it.firstTimeStamp
             }
 //            var filteredList: MutableList<UsageStats> = ArrayList(listUsageStats)
 //            for (stat1: UsageStats in listUsageStats) {
