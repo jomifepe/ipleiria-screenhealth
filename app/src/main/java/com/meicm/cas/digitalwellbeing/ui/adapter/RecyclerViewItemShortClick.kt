@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing.adapter
+package com.meicm.cas.digitalwellbeing.ui.adapter
 
 import android.view.View
 

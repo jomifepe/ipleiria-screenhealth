@@ -2,39 +2,76 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".UsageStatisticsFragment">
+    tools:context=".ui.UsageStatisticsFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/ll_total_time"
+            android:id="@+id/ll_top_stats"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/tv_label_tst"
+            <LinearLayout
+                android:id="@+id/ll_total_time"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Total screen time"
-                android:textColor="@color/colorAccent"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_weight="1">
 
-            <TextView
-                android:id="@+id/tv_total_screen_time"
+                <TextView
+                    android:id="@+id/tv_label_tst"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Total screen time"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="16sp"
+                    android:textAlignment="center"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_total_screen_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="N/A"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/secondary_text_dark" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ll_total_unlocks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_weight="1"
-                android:text="N/A"
-                android:textColor="@android:color/secondary_text_dark" />
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/tv_label_unlocks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Unlocks"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textAlignment="center"/>
+
+                <TextView
+                    android:id="@+id/tv_total_unlocks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="N/A"
+                    android:textColor="@android:color/secondary_text_dark"
+                    android:textAlignment="center"/>
+            </LinearLayout>
         </LinearLayout>
 
         <TextView
@@ -49,7 +86,8 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/ll_total_time" />
+            app:layout_constraintTop_toBottomOf="@+id/ll_top_stats"
+            android:layout_marginTop="16dp"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_app_time"

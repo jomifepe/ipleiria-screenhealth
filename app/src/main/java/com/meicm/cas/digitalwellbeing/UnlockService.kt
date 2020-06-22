@@ -1,7 +1,5 @@
 package com.meicm.cas.digitalwellbeing
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,9 +7,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
-import android.widget.Toast
+import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
+import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.util.Const
-import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class UnlockService: Service() {
     override fun onBind(intent: Intent?): IBinder? {
@@ -36,24 +37,48 @@ class UnlockService: Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent!!.action
             if (Intent.ACTION_SCREEN_ON == action) {
+                State.isUnlocked = true
+                State.unlockTime = System.currentTimeMillis()
 
                 Log.d(Const.LOG_TAG, "Unlocked")
 
-                val alarmManager = context!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                val intent = Intent(context, UsageAlarm::class.java)
-                val pending = PendingIntent.getBroadcast(context, 0, intent, 0)
+                runBlocking {
+                    launch(Dispatchers.Default) {
+                        AppDatabase
+                            .getDatabase(context!!)
+                            .unlockDao()
+                            .insert(
+                                Unlock(
+                                    0,
+                                    System.currentTimeMillis(),
+                                    null
+                                )
+                            )
+                    }
+                }
 
-                var cal = Calendar.getInstance()
-                cal.add(Calendar.SECOND, 5)
+//                val alarmManager = context!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+//                val alarmIntent = Intent(context, UsageAlarm::class.java)
+//                val pending = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
+//
+//                var cal = Calendar.getInstance()
+//                cal.add(Calendar.SECOND, 5)
+//
+//                alarmManager.setRepeating(AlarmManager.RTC, cal.timeInMillis, 60000, pending)
+//                Log.d(Const.LOG_TAG, "Started alarm")
 
-                alarmManager.setRepeating(AlarmManager.RTC, cal.timeInMillis, 60000, pending)
-                State.isUnlocked = true
-                State.unlockTime = System.currentTimeMillis()
-                Log.d(Const.LOG_TAG, "Started alarm")
             } else if (Intent.ACTION_SCREEN_OFF == action) {
-
                 Log.d(Const.LOG_TAG, "Locked")
                 State.isUnlocked = false
+
+                runBlocking {
+                    launch(Dispatchers.Default) {
+                        AppDatabase
+                            .getDatabase(context!!)
+                            .unlockDao()
+                            .updateLastUnlockEndTimestamp(System.currentTimeMillis())
+                    }
+                }
             }
         }
     }
