@@ -173,8 +173,10 @@ class UsageStatisticsFragment: Fragment() {
             val currentUsageEvent: UsageEvents.Event = UsageEvents.Event()
             usageEvents.getNextEvent(currentUsageEvent)
 
-            if(getAppName(currentUsageEvent.packageName).compareTo("Instagram") == 0){
-                Log.d (Const.LOG_TAG, "[${currentUsageEvent.eventType}] Activity ${currentUsageEvent.packageName} at: ${epochToString(currentUsageEvent.timeStamp)}")
+            //if(getAppName(currentUsageEvent.packageName).compareTo("Instagram") == 0){
+            if(getAppName(currentUsageEvent.packageName).compareTo("System UI") == 0) {
+
+                    Log.d (Const.LOG_TAG, "[${currentUsageEvent.eventType}] Activity ${currentUsageEvent.packageName} at: ${epochToString(currentUsageEvent.timeStamp)}")
             }
             processEvent(currentUsageEvent, appSessions, currentAppTimestamps)
         }
@@ -250,16 +252,26 @@ class UsageStatisticsFragment: Fragment() {
 
 
         //2 ACTIVITY PAUSED
-        if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0 && usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
+        /*if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0 && usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
             Log.d(Const.LOG_TAG, "Put at null")
+        }*/
+
+        if(getAppName(usageEvent.packageName).compareTo("System UI") == 0) {
+            Log.d(Const.LOG_TAG, "comes here")
         }
 
         //An activity moved to the background or
         //an activity becomes invisible on the UI
         val appInfo = context!!.packageManager.getApplicationInfo(usageEvent.packageName, 0)
         val bitMask = appInfo.flags and ApplicationInfo.FLAG_SYSTEM
+
+        if(bitMask == 1){
+            val a = 5
+        }
+
         /*if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED && bitMask == 1) ||
             usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED && bitMask != 1){*/
+        
         if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) ||
             usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED){
 
@@ -270,7 +282,8 @@ class UsageStatisticsFragment: Fragment() {
                 appSessions[usageEvent.packageName] = mutableListOf()
             }
             appSessions.getValue(usageEvent.packageName).add(Pair(currentAppTimestamps.getValue(usageEvent.packageName)!!, usageEvent.timeStamp))
-            if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0) {
+            //if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0) {
+            if(getAppName(usageEvent.packageName).compareTo("System UI") == 0) {
                 Log.d(Const.LOG_TAG, "Put at null")
             }
             currentAppTimestamps[usageEvent.packageName] = null
