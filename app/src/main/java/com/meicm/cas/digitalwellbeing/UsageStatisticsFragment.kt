@@ -145,6 +145,7 @@ class UsageStatisticsFragment: Fragment() {
                 }else{
                     totalPerApp += it.second!! - it.first
                 }
+                //totalPerApp += it.second!! - it.first
             }
             if(it.value.size > 0) {
                 tableList.add(Pair(getAppName(it.key), totalPerApp))
@@ -171,6 +172,10 @@ class UsageStatisticsFragment: Fragment() {
         while (usageEvents.hasNextEvent()) {
             val currentUsageEvent: UsageEvents.Event = UsageEvents.Event()
             usageEvents.getNextEvent(currentUsageEvent)
+
+            if(getAppName(currentUsageEvent.packageName).compareTo("Instagram") == 0){
+                Log.d (Const.LOG_TAG, "[${currentUsageEvent.eventType}] Activity ${currentUsageEvent.packageName} at: ${epochToString(currentUsageEvent.timeStamp)}")
+            }
             processEvent(currentUsageEvent, appSessions, currentAppTimestamps)
         }
 
@@ -189,7 +194,7 @@ class UsageStatisticsFragment: Fragment() {
         }
 
         //#####DEBUG ONLY#####
-        var totalPerApp = 0L
+        /*var totalPerApp = 0L
         var total = 0L
         var diff = 0L
         appSessions.forEach{
@@ -224,7 +229,7 @@ class UsageStatisticsFragment: Fragment() {
             totalPerApp = 0L
         }
         val hms = getHMS(total)
-        Log.d(Const.LOG_TAG, "Final total: ${hms.first}h ${hms.second}min ${hms.third}s")
+        Log.d(Const.LOG_TAG, "Final total: ${hms.first}h ${hms.second}min ${hms.third}s")*/
         //#####DEBUG ONLY#####
 
         return appSessions
@@ -243,12 +248,21 @@ class UsageStatisticsFragment: Fragment() {
             return
         }
 
+
+        //2 ACTIVITY PAUSED
+        if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0 && usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) {
+            Log.d(Const.LOG_TAG, "Put at null")
+        }
+
         //An activity moved to the background or
         //an activity becomes invisible on the UI
         val appInfo = context!!.packageManager.getApplicationInfo(usageEvent.packageName, 0)
         val bitMask = appInfo.flags and ApplicationInfo.FLAG_SYSTEM
-        if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED && bitMask == 1) ||
-            usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED && bitMask != 1){
+        /*if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED && bitMask == 1) ||
+            usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED && bitMask != 1){*/
+        if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) ||
+            usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED){
+
             if(currentAppTimestamps.getValue(usageEvent.packageName) == null){
                 return
             }
@@ -256,6 +270,9 @@ class UsageStatisticsFragment: Fragment() {
                 appSessions[usageEvent.packageName] = mutableListOf()
             }
             appSessions.getValue(usageEvent.packageName).add(Pair(currentAppTimestamps.getValue(usageEvent.packageName)!!, usageEvent.timeStamp))
+            if(getAppName(usageEvent.packageName).compareTo("Instagram") == 0) {
+                Log.d(Const.LOG_TAG, "Put at null")
+            }
             currentAppTimestamps[usageEvent.packageName] = null
         }
     }
