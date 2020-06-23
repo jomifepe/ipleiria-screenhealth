@@ -29,7 +29,8 @@ class DataRepository(
                     appCategoryDao.insert(appCategory)
                 }
             } catch (ex: Exception) {
-                Log.d(Const.LOG_TAG, "Failed to get category for app $pkg, ${ex.message}")
+                appCategoryDao.insert(AppCategory(0, pkg, null))
+//                Log.d(Const.LOG_TAG, "Failed to get category for app $pkg, ${ex.message}")
             }
         }
     }

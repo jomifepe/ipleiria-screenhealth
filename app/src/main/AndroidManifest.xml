@@ -24,7 +24,11 @@
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".UsageAlarm"
+            android:name=".UsageWarningBroadcaster"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name=".SnoozeUsageWarningBroadcaster"
             android:enabled="true"
             android:exported="true" />
     </application>

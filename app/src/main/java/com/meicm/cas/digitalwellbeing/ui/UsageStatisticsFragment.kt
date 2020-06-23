@@ -8,6 +8,7 @@ import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.meicm.cas.digitalwellbeing.R
+import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
 import com.meicm.cas.digitalwellbeing.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
@@ -166,22 +168,10 @@ class UsageStatisticsFragment: Fragment() {
             UsageStatsManager.INTERVAL_DAILY, startTime.timeInMillis, endTime.timeInMillis)
 
         if (stats.isNotEmpty()) {
-<<<<<<< Updated upstream:app/src/main/java/com/meicm/cas/digitalwellbeing/UsageStatisticsFragment.kt
 //            val stats = aggregateStats.values
-            var listUsageStats: List<UsageStats> = stats.filter {
-                it.totalTimeInForeground > 0 && startTime.timeInMillis <= it.firstTimeStamp
-            }
-//            var filteredList: MutableList<UsageStats> = ArrayList(listUsageStats)
-//            for (stat1: UsageStats in listUsageStats) {
-//                for ((index, stat2) in listUsageStats.withIndex()) {
-//                    if (stat1.packageName != stat2.packageName) continue
-//                    if (stat1.lastTimeUsed > stat2.lastTimeUsed) filteredList.removeAt(index)
-//                }
-=======
             var listUsageStats = stats
 //            var listUsageStats: List<UsageStats> = stats.filter {
-//                it.totalTimeInForeground > 0 && startTime.timeInMillis < it.firstTimeStamp
->>>>>>> Stashed changes:app/src/main/java/com/meicm/cas/digitalwellbeing/ui/UsageStatisticsFragment.kt
+//                it.totalTimeInForeground > 0 && startTime.timeInMillis <= it.firstTimeStamp
 //            }
 
             listUsageStats = listUsageStats.sortedByDescending { it.totalTimeInForeground }.toMutableList()

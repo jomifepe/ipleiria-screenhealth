@@ -1,6 +1,9 @@
 package com.meicm.cas.digitalwellbeing.ui
 
-import android.app.*
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.IntentFilter
+import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -8,8 +11,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.navigation.findNavController
 import androidx.navigation.ui.NavigationUI
 import com.meicm.cas.digitalwellbeing.R
+import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
 import com.meicm.cas.digitalwellbeing.util.Const
+
 
 class MainActivity : AppCompatActivity() {
 
