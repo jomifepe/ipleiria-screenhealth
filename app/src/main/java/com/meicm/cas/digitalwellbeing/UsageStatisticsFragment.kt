@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing.ui
+package com.meicm.cas.digitalwellbeing
 
 import android.app.AlertDialog
 import android.app.AppOpsManager
@@ -23,7 +23,6 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
