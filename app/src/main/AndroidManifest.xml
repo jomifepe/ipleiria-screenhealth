@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".UnlockService"
+            android:name=".service.UnlockService"
             android:enabled="true"
             android:exported="true" />
         <receiver

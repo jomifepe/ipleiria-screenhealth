@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.service
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
+import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
 import com.meicm.cas.digitalwellbeing.util.Const
 
 class UnlockService: Service() {
@@ -20,7 +21,8 @@ class UnlockService: Service() {
     override fun onCreate() {
         val filter = IntentFilter(Intent.ACTION_SCREEN_ON)
         filter.addAction(Intent.ACTION_SCREEN_OFF)
-        val mReceiver: BroadcastReceiver = ScreenInteractiveReceiver()
+        val mReceiver: BroadcastReceiver =
+            ScreenInteractiveReceiver()
         registerReceiver(mReceiver, filter)
         Log.d(Const.LOG_TAG, "Registered broadcast receiver")
     }

@@ -8,20 +8,20 @@ import com.meicm.cas.digitalwellbeing.util.Const
 class AppPreferences {
 
     companion object {
-        private var singleton: AppPreferences? = null
+        private var instance: AppPreferences? = null
         private lateinit var preferences: SharedPreferences
         private lateinit var editor: SharedPreferences.Editor
 
         fun with(context: Context) : AppPreferences {
-            if (null == singleton)
-                singleton = Builder(context).build()
-            return singleton as AppPreferences
+            if (null == instance)
+                instance = Builder(context).build()
+            return instance as AppPreferences
         }
 
         fun with(context: Context, mode: Int) : AppPreferences {
-            if (null == singleton)
-                singleton = Builder(context, mode).build()
-            return singleton as AppPreferences
+            if (null == instance)
+                instance = Builder(context, mode).build()
+            return instance as AppPreferences
         }
     }
 
@@ -37,6 +37,10 @@ class AppPreferences {
     constructor(context: Context) {
         preferences = context.getSharedPreferences(Const.PREFS_NAME, Context.MODE_PRIVATE)
         editor = preferences.edit()
+    }
+
+    fun contains(key: String): Boolean {
+        return preferences.contains(key)
     }
 
     fun save(key: String, value: Boolean) {

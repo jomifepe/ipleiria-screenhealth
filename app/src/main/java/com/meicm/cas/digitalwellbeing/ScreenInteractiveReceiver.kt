@@ -6,15 +6,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
-import com.meicm.cas.digitalwellbeing.persistence.entity.Snooze
+import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
+import compareTimestampsDateEqual
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.random.Random
 
 class ScreenInteractiveReceiver: BroadcastReceiver() {
     private lateinit var alarmManager: AlarmManager
@@ -37,30 +35,20 @@ class ScreenInteractiveReceiver: BroadcastReceiver() {
                         .unlockDao()
                         .insert(Unlock(0, System.currentTimeMillis(),null))
                 }
+            }
 
-                launch(Dispatchers.IO) {
-                    val snooze = Snooze(System.currentTimeMillis())
-                    val deferred: Deferred<Snooze?> = async(Dispatchers.IO) {
-                        AppDatabase
-                            .getDatabase(context)
-                            .snoozeDao()
-                            .getSnooze(snooze.timestamp)
-                    }
+            val pref = AppPreferences.with(context)
+            if (pref.contains(Const.PREFS_KEY_SNOOZE_LONG)) {
+                val timestamp = pref.getLong(Const.PREFS_KEY_SNOOZE_LONG, 0L)
+                val snoozeIsToday = compareTimestampsDateEqual(timestamp, System.currentTimeMillis())
 
-                    val existingSnooze: Snooze? = deferred.await()
-                    if (existingSnooze == null) {
-                        Log.d(Const.LOG_TAG, "No existing snooze, starting alarm")
-                        val alarmIntent = Intent(context, UsageWarningBroadcaster::class.java)
-                        alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
-
-                        val cal = Calendar.getInstance()
-                        cal.add(Calendar.SECOND, 5)
-
-                        alarmManager.setRepeating(AlarmManager.RTC, cal.timeInMillis, 60000, alarmPI)
-                    } else {
-                        Log.d(Const.LOG_TAG, "Found snooze entry, not doing anything")
-                    }
+                if (!snoozeIsToday) {
+                    launchWarningRepeatingTimer(context, false)
+                } else {
+                    Log.d(Const.LOG_TAG, "Snooze detected, no notification timer started")
                 }
+            } else {
+                launchWarningRepeatingTimer(context, false)
             }
 
         } else if (Intent.ACTION_SCREEN_OFF == action) {
@@ -84,6 +72,21 @@ class ScreenInteractiveReceiver: BroadcastReceiver() {
             } else {
                 Log.d(Const.LOG_TAG, "No alarms to cancel")
             }
+        }
+    }
+
+    private fun launchWarningRepeatingTimer(context: Context, repeating: Boolean) {
+        Log.d(Const.LOG_TAG, "Starting usage notification timer")
+        val alarmIntent = Intent(context, UsageWarningBroadcaster::class.java)
+        alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
+
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.SECOND, 5)
+
+        if (repeating) {
+            alarmManager.setRepeating(AlarmManager.RTC, cal.timeInMillis, 60000, alarmPI)
+        } else {
+            alarmManager.set(AlarmManager.RTC, cal.timeInMillis, alarmPI)
         }
     }
 }

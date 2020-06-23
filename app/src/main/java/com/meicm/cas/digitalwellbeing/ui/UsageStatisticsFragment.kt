@@ -8,7 +8,6 @@ import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -25,8 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.meicm.cas.digitalwellbeing.R
-import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
-import com.meicm.cas.digitalwellbeing.UnlockService
+import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding

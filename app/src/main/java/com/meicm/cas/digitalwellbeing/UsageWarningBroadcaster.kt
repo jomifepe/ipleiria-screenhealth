@@ -7,17 +7,21 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.meicm.cas.digitalwellbeing.util.Const
-import kotlin.random.Random
+import com.meicm.cas.digitalwellbeing.util.NotificationId
 
 class UsageWarningBroadcaster: BroadcastReceiver() {
     object Constant {
-        const val ACTION_EXTRA: String = "usage_warning"
+        const val ACTION_EXTRAS: String = "usage_warning.extras"
         const val ACTION_SNOOZE: String = "android.intent.action.ACTION_SNOOZE"
+        const val NOTIFICATION_ID: String = "usage_warning.extra.NOTIFICATION_ID"
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        val snoozeIntent: Intent = Intent(context, SnoozeUsageWarningBroadcaster::class.java)
-        snoozeIntent.action = Constant.ACTION_SNOOZE
+        val notificationId: Int = NotificationId.getNewId()
+        val snoozeIntent: Intent = Intent(context, SnoozeUsageWarningBroadcaster::class.java).apply {
+            action = Constant.ACTION_SNOOZE
+            putExtra(Constant.NOTIFICATION_ID, notificationId)
+        }
         val snoozePI: PendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, 0)
 
         val builder = NotificationCompat.Builder(context!!, Const.NOTIFICATION_CHANNEL_GENERAL)
@@ -28,6 +32,6 @@ class UsageWarningBroadcaster: BroadcastReceiver() {
             .addAction(R.drawable.ic_snooze_black, context.getString(R.string.label_snooze), snoozePI)
 
         val notificationManager = NotificationManagerCompat.from(context)
-        notificationManager.notify(Random.nextInt(100), builder.build())
+        notificationManager.notify(notificationId, builder.build())
     }
 }
