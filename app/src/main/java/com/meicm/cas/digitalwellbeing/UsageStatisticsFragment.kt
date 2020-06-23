@@ -1,7 +1,5 @@
 package com.meicm.cas.digitalwellbeing
 
-import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.app.AppOpsManager
 import android.app.usage.EventStats
@@ -21,15 +19,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Switch
 import android.widget.Toast
-import androidx.core.content.ContextCompat
+import androidx.annotation.RequiresApi
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.meicm.cas.digitalwellbeing.adapter.AppTimeUsageRecyclerAdapter
-import com.meicm.cas.digitalwellbeing.adapter.RecyclerViewItemShortClick
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import com.meicm.cas.digitalwellbeing.service.UnlockService
+import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
+import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
+import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
-import java.lang.reflect.Field
+import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
+import kotlinx.android.synthetic.main.fragment_usage_statistics.*
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -39,30 +43,29 @@ import kotlin.collections.HashMap
 private const val MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 3
 
 class UsageStatisticsFragment: Fragment() {
-    lateinit var binding: FragmentUsageStatisticsBinding
-    lateinit var appTimeAdapter: AppTimeUsageRecyclerAdapter
+    private lateinit var binding: FragmentUsageStatisticsBinding
+    private lateinit var appTimeAdapter: AppTimeUsageRecyclerAdapter
+    private lateinit var usageViewModel: UsageViewModel
+
+    private var appUsageStatsList: List<UsageStats> = listOf()
+    private var appCategories: List<AppCategory> = listOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         binding = DataBindingUtil.inflate<FragmentUsageStatisticsBinding>(
-            inflater, R.layout.fragment_usage_statistics, container, false)
+            inflater,
+            R.layout.fragment_usage_statistics, container, false)
         setHasOptionsMenu(true)
 
-        appTimeAdapter = AppTimeUsageRecyclerAdapter(object: RecyclerViewItemShortClick {
-            override fun onShortClick(view: View, position: Int) {
-                Toast.makeText(binding.root.context, "Clicked app", Toast.LENGTH_SHORT).show()
-            }
-        })
-        binding.rvAppTime.layoutManager = LinearLayoutManager(binding.root.context,
-            LinearLayoutManager.VERTICAL, false)
-        binding.rvAppTime.adapter = appTimeAdapter
+        setupList()
+        subscribeViewModel()
 
         if (!hasUsagePermission()) {
             showUsagePermissionDialog()
         } else {
-            getStats()
+            loadData()
         }
 
         return binding.root
@@ -78,8 +81,33 @@ class UsageStatisticsFragment: Fragment() {
         }
     }
 
+    private fun setupList() {
+        appTimeAdapter = AppTimeUsageRecyclerAdapter(object: RecyclerViewItemShortClick {
+            override fun onShortClick(view: View, position: Int) {
+                var stat: UsageStats = appUsageStatsList[position]
+                var category: AppCategory? = appCategories.find { it.appPackage == stat.packageName }
+                Toast.makeText(binding.root.context, category?.category, Toast.LENGTH_SHORT).show()
+            }
+        })
+        binding.rvAppTime.layoutManager = LinearLayoutManager(binding.root.context,
+            LinearLayoutManager.VERTICAL, false)
+        binding.rvAppTime.adapter = appTimeAdapter
+    }
+
+    private fun subscribeViewModel() {
+        usageViewModel = ViewModelProvider(this).get(UsageViewModel::class.java)
+        usageViewModel.allUnlocks.observe(viewLifecycleOwner, Observer { unlocks ->
+            unlocks?.let { tv_total_unlocks.text = unlocks.size.toString() }
+        })
+        usageViewModel.appCategories.observe(viewLifecycleOwner, Observer { data ->
+            data?.let {
+                this.appCategories = data
+            }
+        })
+    }
+
     private fun showUsagePermissionDialog() {
-        val builder = AlertDialog.Builder(context!!)
+        val builder = AlertDialog.Builder(context)
         builder.setTitle("Usage Access")
         builder.setMessage("This app needs to have access to your device's app usage and statistics in order to work")
 
@@ -88,7 +116,7 @@ class UsageStatisticsFragment: Fragment() {
         }
 
         builder.setNegativeButton(android.R.string.cancel) { dialog, which ->
-            Toast.makeText(context!!,
+            Toast.makeText(context,
                 "Sorry, but without usage access this app won't show anything", Toast.LENGTH_LONG).show()
         }
 
@@ -97,13 +125,14 @@ class UsageStatisticsFragment: Fragment() {
 
     private fun showPermissionAccessSettings() {
         startActivityForResult(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
-            MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS)
+            MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS
+        )
     }
 
     private fun hasUsagePermission(): Boolean {
         try {
-            val applicationInfo = context!!.packageManager.getApplicationInfo(context!!.packageName, 0)
-            val appOpsManager = context!!.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val applicationInfo = requireContext().packageManager.getApplicationInfo(requireContext().packageName, 0)
+            val appOpsManager = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
             val mode = appOpsManager.checkOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
                 applicationInfo.uid,
@@ -117,7 +146,7 @@ class UsageStatisticsFragment: Fragment() {
 
     private fun loadData() {
         getStats()
-        context!!.startService(Intent(context!!, UnlockService::class.java))
+        requireContext().startService(Intent(requireContext(), UnlockService::class.java))
     }
 
     private fun getStats() {
@@ -130,6 +159,11 @@ class UsageStatisticsFragment: Fragment() {
         val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
         Log.d(Const.LOG_TAG, "Querying between: ${sdf.format(startTime.time)} (${startTime.timeInMillis}) and ${sdf.format(endTime.time)} (${endTime.timeInMillis})")
 
+        getUsageStats(startTime, endTime)
+        getEventStats(startTime, endTime)
+    }
+
+    private fun getUsageStats(startTime: Calendar, endTime: Calendar) {
         val manager = binding.root.context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         //processLockUnlockSessions(manager, startTime, endTime)
@@ -230,6 +264,77 @@ class UsageStatisticsFragment: Fragment() {
         return appSessions
     }
 
+    private fun getEventStats(startTime: Calendar, endTime: Calendar) {
+        val manager = binding.root.context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val usageEvents: UsageEvents = manager.queryEvents(startTime.timeInMillis, endTime.timeInMillis)
+        val listUnlocks = mutableListOf<Unlock>()
+
+        var previousUnlock: Unlock? = null
+        while (usageEvents.hasNextEvent()) {
+            val event: UsageEvents.Event = UsageEvents.Event()
+            usageEvents.getNextEvent(event)
+
+            if (event.timeStamp < startTime.timeInMillis ||
+                event.timeStamp > endTime.timeInMillis) continue
+
+            if (event.eventType == UsageEvents.Event.SCREEN_INTERACTIVE) {
+                previousUnlock =
+                    Unlock(
+                        0,
+                        event.timeStamp,
+                        null
+                    )
+            } else if (event.eventType == UsageEvents.Event.SCREEN_NON_INTERACTIVE) {
+                if (previousUnlock == null) continue
+                if (previousUnlock.startTimestamp == null) continue
+                previousUnlock.endTimestamp = event.timeStamp
+                listUnlocks.add(previousUnlock)
+
+                previousUnlock = null
+            }
+        }
+        // add the remaining unlock (current one) to the list
+        if (previousUnlock != null) listUnlocks.add(previousUnlock)
+
+        usageViewModel.insertUnlocksIfEmpty(listUnlocks)
+    }
+
+    // TODO: remove
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun loadEventStats(startTime: Calendar, endTime: Calendar) {
+        val manager = binding.root.context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        var eventStats: List<EventStats> = manager.queryEventStats(UsageStatsManager.INTERVAL_DAILY,
+            startTime.timeInMillis, endTime.timeInMillis)
+        eventStats = eventStats.filter { startTime.timeInMillis <= it.firstTimeStamp }
+        if (eventStats.isNotEmpty()) {
+            addUnlocksStatsToDatabase(eventStats)
+            Log.d(Const.LOG_TAG, "Event codes: https://developer.android.com/reference/kotlin/android/app/usage/UsageEvents.Event")
+            eventStats.forEach {
+                val hms = getHMS(it.lastTimeStamp - it.firstTimeStamp)
+                Log.d(Const.LOG_TAG, "Event: ${it.eventType} Count: ${it.count} Total_Time: ${hms.first} h ${hms.second} min ${hms.third} s")
+            }
+        } else {
+            Log.d(Const.LOG_TAG, "No event stats found")
+        }
+    }
+
+    // TODO: remove
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun addUnlocksStatsToDatabase(stats: List<EventStats>) {
+        var unlockCount: Int = 0
+        stats.filter { it.eventType == 15 }
+             .forEach { unlockCount += it.count }
+        val unlocks = mutableListOf<Unlock>()
+        for (i in 0..unlockCount) unlocks.add(
+            Unlock(
+                0,
+                null,
+                null
+            )
+        )
+        usageViewModel.insertUnlocksIfEmpty(unlocks)
+    }
+
     private fun processEvent(usageEvent : UsageEvents.Event, appSessions : HashMap<String,
             MutableList<Pair<Long, Long?>>>, currentAppTimestamps : HashMap<String, Long?>){
 
@@ -293,10 +398,6 @@ class UsageStatisticsFragment: Fragment() {
         val hours: Long = (timeInMillis / (1000 * 60 * 60))
 
         return Triple(hours, minutes, seconds)
-
-//        return Triple(TimeUnit.MILLISECONDS.toHours(timeInMillis),
-//            TimeUnit.MILLISECONDS.toMinutes(timeInMillis),
-//            TimeUnit.MILLISECONDS.toSeconds(timeInMillis))
     }
 
     private fun epochToString(epoch: Long): String{

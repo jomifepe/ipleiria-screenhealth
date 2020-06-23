@@ -1,18 +1,14 @@
-package com.meicm.cas.digitalwellbeing.adapter
+package com.meicm.cas.digitalwellbeing.ui.adapter
 
 import android.app.usage.UsageStats
-import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.meicm.cas.digitalwellbeing.R
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import kotlinx.android.synthetic.main.app_time_usage_list_item.view.*
-import java.util.concurrent.TimeUnit
 
 class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
     BaseRecyclerAdapter<Pair<String, Long>, AppTimeUsageRecyclerAdapter.ViewHolder>(onShortClick) {

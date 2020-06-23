@@ -8,6 +8,6 @@
     <fragment
         android:id="@+id/usageStatistics"
         android:name="com.meicm.cas.digitalwellbeing.UsageStatisticsFragment"
-        android:label="fragment_usage_statistics"
+        android:label="Usage Statistics"
         tools:layout="@layout/fragment_usage_statistics" />
 </navigation>
