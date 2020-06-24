@@ -51,6 +51,8 @@ class ScreenInteractiveReceiver: BroadcastReceiver() {
                 launchWarningRepeatingTimer(context, false)
             }
 
+
+
         } else if (Intent.ACTION_SCREEN_OFF == action) {
             Log.d(Const.LOG_TAG, "Locked")
 

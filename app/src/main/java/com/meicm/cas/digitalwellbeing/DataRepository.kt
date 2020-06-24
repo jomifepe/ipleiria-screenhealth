@@ -1,11 +1,14 @@
 package com.meicm.cas.digitalwellbeing
 
+import android.se.omapi.Session
 import android.util.Log
 import androidx.lifecycle.LiveData
 import com.meicm.cas.digitalwellbeing.persistence.dao.AppCategoryDao
+import com.meicm.cas.digitalwellbeing.persistence.dao.AppSessionDao
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.persistence.dao.UnlockDao
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
 import com.meicm.cas.digitalwellbeing.util.Const
@@ -13,7 +16,8 @@ import java.lang.Exception
 
 class DataRepository(
     private val unlocksDao: UnlockDao,
-    private val appCategoryDao: AppCategoryDao
+    private val appCategoryDao: AppCategoryDao,
+    private val appSessionDao: AppSessionDao
 ) {
     private val googlePlayService: GooglePlayService = GooglePlayService.create()
     val allUnlocks: LiveData<List<Unlock>> = unlocksDao.getAll()
@@ -34,6 +38,25 @@ class DataRepository(
             }
         }
     }
+
+//    suspend fun getAppSession(startTime: Long, endTime: Long): HashMap<String, MutableList<AppSession>> {
+//        val sessions = appSessionDao.getSessionByRange(startTime, endTime)
+//
+//        val packageSessions = HashMap<String, MutableList<AppSession>>()
+//
+//        val currentTimeMillis = System.currentTimeMillis()
+//        for (session in sessions) {
+//            if (!packageSessions.containsKey(session.appPackage)) {
+//                packageSessions[session.appPackage] = mutableListOf()
+//            }
+//            if (session.endTimestamp == null) {
+//                session.endTimestamp = currentTimeMillis
+//            }
+//            packageSessions[session.appPackage]?.add(session)
+//        }
+//
+//        return packageSessions
+//    }
 
     suspend fun insertUnlock(unlock: Unlock) {
         unlocksDao.insert(unlock)

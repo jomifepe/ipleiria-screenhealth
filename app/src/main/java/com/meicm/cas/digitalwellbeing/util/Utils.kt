@@ -16,3 +16,11 @@ fun compareTimestampsDateEqual(timestamp1: Long, timestamp2: Long): Boolean {
 
     return cal1.timeInMillis == cal2.timeInMillis
 }
+
+fun getHoursMinutesSeconds(timeInMillis: Long): Triple<Long, Long, Long> {
+    val seconds: Long = (timeInMillis / 1000) % 60
+    val minutes: Long = (timeInMillis / (1000 * 60)) % 60
+    val hours: Long = (timeInMillis / (1000 * 60 * 60))
+
+    return Triple(hours, minutes, seconds)
+}

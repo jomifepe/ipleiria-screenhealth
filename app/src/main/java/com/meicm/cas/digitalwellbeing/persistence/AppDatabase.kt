@@ -5,17 +5,17 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.meicm.cas.digitalwellbeing.persistence.dao.AppCategoryDao
-import com.meicm.cas.digitalwellbeing.persistence.dao.SnoozeDao
+import com.meicm.cas.digitalwellbeing.persistence.dao.AppSessionDao
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.persistence.dao.UnlockDao
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
-import com.meicm.cas.digitalwellbeing.persistence.entity.Snooze
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.util.Const
 
 @Database(entities = arrayOf(
     Unlock::class,
     AppCategory::class,
-    Snooze::class
+    AppSession::class
 ), version = 1, exportSchema = false)
 
 abstract class AppDatabase: RoomDatabase() {
@@ -42,5 +42,5 @@ abstract class AppDatabase: RoomDatabase() {
 
     abstract fun unlockDao(): UnlockDao
     abstract fun appCategoryDao(): AppCategoryDao
-    abstract fun snoozeDao(): SnoozeDao
+    abstract fun appSessionDao(): AppSessionDao
 }
