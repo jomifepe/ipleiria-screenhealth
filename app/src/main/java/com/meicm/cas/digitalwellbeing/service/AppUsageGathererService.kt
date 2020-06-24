@@ -160,26 +160,15 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
             .update(appCategories)
     }
 
-    private fun closeOpenedSessions(openSessions: List<AppSession>) {
+    private fun closeOpenSessions(openSessions: List<AppSession>) {
         val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
-        val appsSessions: HashMap<String, MutableList<Pair<Long, Long?>>> =
+        val appSessions: HashMap<String, MutableList<Pair<Long, Long?>>> =
             processAppsUsageSessions(manager, openSessions.first().startTimestamp, System.currentTimeMillis())
-        val packageToIndexMap =  hashMapOf<String, Int>()
 
-        for ((index, value) in openSessions.withIndex()) {
-            packageToIndexMap[value.appPackage] = index
-        }
-
-        for (sessions in appsSessions){
-            if(!packageToIndexMap.containsKey(sessions.key)) {
-                continue
-            }
-            //update end endTimestamp with the endTimestamp present on the first session of that package
-            openSessions[packageToIndexMap[sessions.key]!!].endTimestamp = sessions.value.first().second
-            packageToIndexMap.remove(sessions.key)
-            if(packageToIndexMap.isEmpty()){
-                break
+        openSessions.forEach{
+            if(appSessions.containsKey(it.appPackage)){
+                assert(appSessions.getValue(it.appPackage).size > 0)
+                it.endTimestamp = appSessions.getValue(it.appPackage).first().second
             }
         }
 
