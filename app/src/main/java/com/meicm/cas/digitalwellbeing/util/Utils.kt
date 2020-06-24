@@ -1,3 +1,4 @@
+import android.content.Context
 import java.util.*
 
 fun compareTimestampsDateEqual(timestamp1: Long, timestamp2: Long): Boolean {
@@ -23,4 +24,9 @@ fun getHoursMinutesSeconds(timeInMillis: Long): Triple<Long, Long, Long> {
     val hours: Long = (timeInMillis / (1000 * 60 * 60))
 
     return Triple(hours, minutes, seconds)
+}
+
+fun getAppName(context: Context, packageName: String): String {
+    val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
+    return appInfo.loadLabel(context.packageManager).toString()
 }

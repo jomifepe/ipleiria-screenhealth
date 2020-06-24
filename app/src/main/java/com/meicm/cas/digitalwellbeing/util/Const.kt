@@ -1,6 +1,7 @@
 package com.meicm.cas.digitalwellbeing.util
 
 object Const {
+    val SERVICE_NAME_DATA_GATHERER = "Service_UsageGatherer"
     val NOTIFICATION_CHANNEL_GENERAL = "General"
     val LOG_TAG = "DW_LOGGING"
     val DATABASE_NAME = "DigitalWellbeing"

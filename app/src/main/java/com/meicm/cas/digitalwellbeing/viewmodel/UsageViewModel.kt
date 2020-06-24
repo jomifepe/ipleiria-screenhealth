@@ -17,11 +17,7 @@ class UsageViewModel(application: Application): AndroidViewModel(application) {
     private val repository: DataRepository
     val allUnlocks: LiveData<List<Unlock>>
     val appCategories: LiveData<List<AppCategory>>
-
-//    private val appSessionRange = MutableLiveData<Pair<Long, Long>>()
-//    val appSessions: LiveData<HashMap<String, MutableList<AppSession>>> = Transformations.switchMap(appSessionRange) {
-//            range -> repository.getAppSession(range.first, range.second)
-//    }
+    val appSessions: LiveData<List<AppSession>>
 
     init {
         val db = AppDatabase.getDatabase(application)
@@ -32,11 +28,15 @@ class UsageViewModel(application: Application): AndroidViewModel(application) {
         )
         allUnlocks = repository.allUnlocks
         appCategories = repository.allAppCategories
+        appSessions = repository.allAppSessions
     }
 
-//    fun getAppSession(startTime: Long, endTime: Long) = viewModelScope.launch(Dispatchers.IO) {
-//        repository.getAppSession(startTime, endTime)
-//    }
+    fun getAppSessions(startTime: Long, endTime: Long, callback: (HashMap<String, MutableList<AppSession>>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val appSessions = repository.getAppSessions(startTime, endTime)
+            callback(appSessions)
+        }
+    }
 
     fun categorizeApplications(appPackages: List<String>) = viewModelScope.launch(Dispatchers.IO) {
         repository.categorizeApplications(appPackages)

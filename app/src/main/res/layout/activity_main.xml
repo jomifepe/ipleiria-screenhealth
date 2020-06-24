@@ -23,5 +23,37 @@
             app:layout_constraintVertical_bias="0.0"
             app:navGraph="@navigation/navigation" />
 
+        <LinearLayout
+            android:id="@+id/tv_date_range"
+            android:layout_width="match_parent"
+            android:layout_height="128px"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:gravity="center_horizontal|center_vertical"
+            android:background="#4D000000">
+
+            <ImageView
+                android:id="@+id/bt_date_range_backwards"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_keyboard_arrow_left_white"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Date"
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:layout_marginEnd="16dp"
+                android:layout_marginStart="16dp"
+                android:textSize="20sp"/>
+            <ImageView
+                android:id="@+id/bt_date_range_forward"
+                android:layout_width="64dp"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_keyboard_arrow_right_white" />
+        </LinearLayout>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

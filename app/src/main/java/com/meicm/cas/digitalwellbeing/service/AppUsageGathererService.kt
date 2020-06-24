@@ -1,26 +1,22 @@
 package com.meicm.cas.digitalwellbeing.service
 
-import android.app.Service
+import android.app.IntentService
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.os.IBinder
-import android.se.omapi.Session
 import android.util.Log
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
+import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
 
-class AppUsageGathererService: Service() {
+class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
     override fun onBind(intent: Intent?): IBinder? {
         Log.i(Const.LOG_TAG, "App usage gatherer bound")
         return null
@@ -40,6 +36,10 @@ class AppUsageGathererService: Service() {
         return super.onUnbind(intent)
     }
 
+    override fun onHandleIntent(intent: Intent?) {
+        TODO("Not yet implemented")
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         Log.d(Const.LOG_TAG, "App usage gatherer service destroyed")
@@ -56,6 +56,7 @@ class AppUsageGathererService: Service() {
         Log.d(Const.LOG_TAG, "Querying between: ${sdf.format(startTime.time)} (${startTime.timeInMillis}) and ${sdf.format(endTime.time)} (${endTime.timeInMillis})")
 
         gatherUsageStats(startTime, endTime)
+        loadUnlockEntries(startTime, endTime)
     }
 
     private fun gatherUsageStats(startTime: Calendar, endTime: Calendar) {
@@ -155,6 +156,54 @@ class AppUsageGathererService: Service() {
             }
             appSessions.getValue(usageEvent.packageName).add(Pair(currentAppTimestamps.getValue(usageEvent.packageName)!!, usageEvent.timeStamp))
             currentAppTimestamps[usageEvent.packageName] = null
+        }
+    }
+
+    private fun loadUnlockEntries(startTime: Calendar, endTime: Calendar) {
+        val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        runBlocking {
+            val lastUnlockTimestap: Long? = withContext(Dispatchers.IO) {
+                val unlock = AppDatabase
+                    .getDatabase(this@AppUsageGathererService)
+                    .unlockDao()
+                    .getLastUnlock()
+                return@withContext unlock?.startTimestamp
+            }
+
+            val startTimeStamp = lastUnlockTimestap ?: startTime.timeInMillis
+            val usageEvents: UsageEvents = manager.queryEvents(startTimeStamp, endTime.timeInMillis)
+            val listUnlocks = mutableListOf<Unlock>()
+
+            var previousUnlock: Unlock? = null
+            while (usageEvents.hasNextEvent()) {
+                val event: UsageEvents.Event = UsageEvents.Event()
+                usageEvents.getNextEvent(event)
+
+                if (event.timeStamp < startTime.timeInMillis ||
+                    event.timeStamp > endTime.timeInMillis) continue
+
+                if (event.eventType == UsageEvents.Event.SCREEN_INTERACTIVE) {
+                    previousUnlock = Unlock(0, event.timeStamp, null)
+                } else if (event.eventType == UsageEvents.Event.SCREEN_NON_INTERACTIVE) {
+                    if (previousUnlock == null) continue
+                    if (previousUnlock.startTimestamp == null) continue
+
+                    previousUnlock.endTimestamp = event.timeStamp
+                    listUnlocks.add(previousUnlock)
+
+                    previousUnlock = null
+                }
+            }
+            // add the remaining unlock (current one) to the list
+            if (previousUnlock != null) listUnlocks.add(previousUnlock)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                AppDatabase
+                    .getDatabase(this@AppUsageGathererService)
+                    .unlockDao()
+                    .insertAll(listUnlocks)
+            }
         }
     }
 

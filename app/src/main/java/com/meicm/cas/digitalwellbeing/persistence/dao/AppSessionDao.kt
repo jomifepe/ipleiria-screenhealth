@@ -11,7 +11,7 @@ interface AppSessionDao {
     fun getAll(): LiveData<List<AppSession>>
 
     @Query("SELECT * FROM AppSessions WHERE start_timestamp >= :startTime AND (end_timestamp <= :endTime OR end_timestamp IS NULL)")
-    fun getSessionByRange(startTime: Long, endTime: Long): LiveData<List<AppSession>>
+    fun getSessionByRange(startTime: Long, endTime: Long): List<AppSession>
 
     @Insert
     fun insert(session: AppSession)

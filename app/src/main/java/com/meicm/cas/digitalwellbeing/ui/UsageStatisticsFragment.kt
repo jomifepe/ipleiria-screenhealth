@@ -22,17 +22,13 @@ import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
-import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
 import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
+import getAppName
 import getHoursMinutesSeconds
 import kotlinx.android.synthetic.main.fragment_usage_statistics.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -46,6 +42,9 @@ class UsageStatisticsFragment: Fragment() {
     private var appUsageStatsList: List<UsageStats> = listOf()
     private var appCategories: List<AppCategory> = listOf()
     private var appUsageSessions: List<AppSession> = listOf()
+
+    private var startTime: Long = 0L
+    private var endTime: Long = 0L
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -88,28 +87,14 @@ class UsageStatisticsFragment: Fragment() {
         startTime.set(Calendar.MINUTE, 0)
         startTime.set(Calendar.SECOND, 0)
 
+        this.startTime = startTime.timeInMillis
+        this.endTime = endTime.timeInMillis
+
         requireContext().startService(Intent(requireContext(), AppUsageGathererService::class.java))
 
-        AppDatabase
-            .getDatabase(requireContext())
-            .appSessionDao()
-            .getSessionByRange(startTime.timeInMillis, endTime.timeInMillis)
-            .observe(viewLifecycleOwner, Observer { data ->
-                val packageSessions = HashMap<String, MutableList<AppSession>>()
-
-                val currentTimeMillis = System.currentTimeMillis()
-                for (session in data) {
-                    if (!packageSessions.containsKey(session.appPackage)) {
-                        packageSessions[session.appPackage] = mutableListOf()
-                    }
-                    if (session.endTimestamp == null) {
-                        session.endTimestamp = currentTimeMillis
-                    }
-                    packageSessions[session.appPackage]?.add(session)
-                }
-
-                calculateTotalTimes(packageSessions)
-            })
+//        usageViewModel.getAppSessions(this.startTime, this.endTime) {
+//            calculateTotalTimes(it)
+//        }
 
 //        runBlocking {
 //            CoroutineScope(Dispatchers.IO).launch {
@@ -159,6 +144,13 @@ class UsageStatisticsFragment: Fragment() {
                 this.appCategories = data
             }
         })
+        usageViewModel.appSessions.observe(viewLifecycleOwner, Observer { data ->
+            data?.let {
+                usageViewModel.getAppSessions(this.startTime, this.endTime) {
+                    calculateTotalTimes(it)
+                }
+            }
+        })
     }
 
     private fun calculateTotalTimes(data: HashMap<String, MutableList<AppSession>>) {
@@ -170,13 +162,17 @@ class UsageStatisticsFragment: Fragment() {
                 totalTime += it.endTimestamp!! - it.startTimestamp
             }
             totalScreenTime += totalTime
-            appSessionList.add(Pair(app.key, totalTime))
+
+            appSessionList.add(Pair(getAppName(requireContext(), app.key), totalTime))
         }
 
         val hsm = getHoursMinutesSeconds(totalScreenTime)
         val totalTimeString = "${hsm.first} h ${hsm.second} min ${hsm.third} s"
-        tv_total_screen_time.text = totalTimeString
-        appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
+
+        requireActivity().runOnUiThread{
+            tv_total_screen_time.text = totalTimeString
+            appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
+        }
     }
 
     private fun showUsagePermissionDialog() {
@@ -216,6 +212,11 @@ class UsageStatisticsFragment: Fragment() {
             return false
         }
     }
+
+
+
+
+
 
 //    private fun loadData() {
 //        getStats()

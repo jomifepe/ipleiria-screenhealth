@@ -22,6 +22,7 @@ class DataRepository(
     private val googlePlayService: GooglePlayService = GooglePlayService.create()
     val allUnlocks: LiveData<List<Unlock>> = unlocksDao.getAll()
     val allAppCategories: LiveData<List<AppCategory>> = appCategoryDao.getAll()
+    val allAppSessions: LiveData<List<AppSession>> = appSessionDao.getAll()
 
     suspend fun categorizeApplications(appPackages: List<String>) {
         val categories: List<String>
@@ -39,24 +40,24 @@ class DataRepository(
         }
     }
 
-//    suspend fun getAppSession(startTime: Long, endTime: Long): HashMap<String, MutableList<AppSession>> {
-//        val sessions = appSessionDao.getSessionByRange(startTime, endTime)
-//
-//        val packageSessions = HashMap<String, MutableList<AppSession>>()
-//
-//        val currentTimeMillis = System.currentTimeMillis()
-//        for (session in sessions) {
-//            if (!packageSessions.containsKey(session.appPackage)) {
-//                packageSessions[session.appPackage] = mutableListOf()
-//            }
-//            if (session.endTimestamp == null) {
-//                session.endTimestamp = currentTimeMillis
-//            }
-//            packageSessions[session.appPackage]?.add(session)
-//        }
-//
-//        return packageSessions
-//    }
+    suspend fun getAppSessions(startTime: Long, endTime: Long): HashMap<String, MutableList<AppSession>> {
+        val sessions = appSessionDao.getSessionByRange(startTime, endTime)
+
+        val packageSessions = HashMap<String, MutableList<AppSession>>()
+
+        val currentTimeMillis = System.currentTimeMillis()
+        for (session in sessions) {
+            if (!packageSessions.containsKey(session.appPackage)) {
+                packageSessions[session.appPackage] = mutableListOf()
+            }
+            if (session.endTimestamp == null) {
+                session.endTimestamp = currentTimeMillis
+            }
+            packageSessions[session.appPackage]?.add(session)
+        }
+
+        return packageSessions
+    }
 
     suspend fun insertUnlock(unlock: Unlock) {
         unlocksDao.insert(unlock)
