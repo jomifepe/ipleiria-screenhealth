@@ -5,17 +5,12 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.os.IBinder
-import android.se.omapi.Session
 import android.util.Log
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.util.Const
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
@@ -46,19 +41,73 @@ class AppUsageGathererService: Service() {
     }
 
     private fun gatherUsageStats() {
-        val endTime = Calendar.getInstance()
-        val startTime = Calendar.getInstance()
-        startTime.set(Calendar.HOUR_OF_DAY, 0)
-        startTime.set(Calendar.MINUTE, 0)
-        startTime.set(Calendar.SECOND, 0)
+        runBlocking {
+            val openSessions = withContext(Dispatchers.IO) {
+                return@withContext AppDatabase
+                    .getDatabase(this@AppUsageGathererService)
+                    .appSessionDao()
+                    .getOpenSessions()
+            }
+            if(openSessions.isNotEmpty())
+            {
+                closeOpenedSessions(openSessions)
+            }
 
-        val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
-        Log.d(Const.LOG_TAG, "Querying between: ${sdf.format(startTime.time)} (${startTime.timeInMillis}) and ${sdf.format(endTime.time)} (${endTime.timeInMillis})")
+            val lastSession = withContext(Dispatchers.IO) {
+                return@withContext AppDatabase
+                    .getDatabase(this@AppUsageGathererService)
+                    .appSessionDao()
+                    .getLastSession()
+            }
 
-        gatherUsageStats(startTime, endTime)
+            val startTime = if(lastSession == null){
+                //TODO: Choose a better start time it should be old
+                val cal = Calendar.getInstance()
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.timeInMillis
+            }else{
+                lastSession.startTimestamp + 1
+            }
+            gatherUsageStats(startTime, System.currentTimeMillis())
+        }
     }
 
-    private fun gatherUsageStats(startTime: Calendar, endTime: Calendar) {
+    private fun closeOpenedSessions(openSessions: List<AppSession>) {
+        val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val appsSessions: HashMap<String, MutableList<Pair<Long, Long?>>> =
+            processAppsUsageSessions(manager, openSessions.first().startTimestamp, System.currentTimeMillis())
+        val packageToIndexMap =  hashMapOf<String, Int>()
+
+        for ((index, value) in openSessions.withIndex()) {
+            packageToIndexMap[value.appPackage] = index
+        }
+
+        for (sessions in appsSessions){
+            if(!packageToIndexMap.containsKey(sessions.key)) {
+                continue
+            }
+            //update end endTimestamp with the endTimestamp present on the first session of that package
+            openSessions[packageToIndexMap[sessions.key]!!].endTimestamp = sessions.value.first().second
+            packageToIndexMap.remove(sessions.key)
+            if(packageToIndexMap.isEmpty()){
+                break
+            }
+        }
+
+        runBlocking {
+            CoroutineScope(Dispatchers.IO).launch {
+                AppDatabase
+                    .getDatabase(this@AppUsageGathererService)
+                    .appSessionDao()
+                    .updateSessions(openSessions)
+            }
+        }
+    }
+
+    private fun gatherUsageStats(startTime: Long, endTime: Long) {
         val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val appsSessions: HashMap<String, MutableList<Pair<Long, Long?>>> =
@@ -71,10 +120,10 @@ class AppUsageGathererService: Service() {
         appsSessions.forEach{session ->
             val pkg = session.key
             session.value.forEach{
-                if(it.second == null){
-                    totalPerApp += endTime.timeInMillis - it.first
+                totalPerApp += if(it.second == null){
+                    endTime - it.first
                 }else{
-                    totalPerApp += it.second!! - it.first
+                    it.second!! - it.first
                 }
 
                 dbAppSessionList.add(AppSession(0, pkg, it.first, it.second))
@@ -97,11 +146,11 @@ class AppUsageGathererService: Service() {
         }
     }
 
-    private fun processAppsUsageSessions(manager: UsageStatsManager, startTime: Calendar, endTime: Calendar)
+    private fun processAppsUsageSessions(manager: UsageStatsManager, startTime: Long, endTime: Long)
             : HashMap<String, MutableList<Pair<Long, Long?>>>
     {
         val usageEvents: UsageEvents =
-            manager.queryEvents(startTime.timeInMillis, endTime.timeInMillis)
+            manager.queryEvents(startTime, endTime)
         val appSessions = hashMapOf<String, MutableList<Pair<Long, Long?>>>()
         val currentAppTimestamps = hashMapOf<String, Long?>()
 
@@ -144,7 +193,6 @@ class AppUsageGathererService: Service() {
 
         //An activity moved to the background or
         //an activity becomes invisible on the UI
-        val appInfo = packageManager.getApplicationInfo(usageEvent.packageName, 0)
         if((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) ||
             usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED){
             if(currentAppTimestamps.getValue(usageEvent.packageName) == null){
