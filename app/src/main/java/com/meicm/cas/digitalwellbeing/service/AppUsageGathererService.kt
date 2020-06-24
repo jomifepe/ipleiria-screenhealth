@@ -66,7 +66,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
             {
                 /* Query the usage api to check if the open apps were closed since the last time
                    the database was updated */
-                closeOpenedSessions(openSessions)
+                closeOpenSessions(openSessions)
             }
 
             /* Get the last app session from the database */
