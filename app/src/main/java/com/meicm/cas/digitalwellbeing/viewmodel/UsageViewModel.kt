@@ -1,15 +1,12 @@
 package com.meicm.cas.digitalwellbeing.viewmodel
 
 import android.app.Application
-import android.database.Observable
-import androidx.databinding.ObservableMap
 import androidx.lifecycle.*
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.DataRepository
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -29,6 +26,13 @@ class UsageViewModel(application: Application): AndroidViewModel(application) {
         allUnlocks = repository.allUnlocks
         appCategories = repository.allAppCategories
         appSessions = repository.allAppSessions
+    }
+
+    fun getUnlocks(startTime: Long, endTime: Long, callback: (List<Unlock>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val unlocks = repository.getUnlocks(startTime, endTime)
+            callback(unlocks)
+        }
     }
 
     fun getAppSessions(startTime: Long, endTime: Long, callback: (HashMap<String, MutableList<AppSession>>) -> Unit) {

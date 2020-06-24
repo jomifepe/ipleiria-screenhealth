@@ -24,7 +24,6 @@
             app:navGraph="@navigation/navigation" />
 
         <LinearLayout
-            android:id="@+id/tv_date_range"
             android:layout_width="match_parent"
             android:layout_height="128px"
             android:orientation="horizontal"
@@ -40,6 +39,7 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_keyboard_arrow_left_white"/>
             <TextView
+                android:id="@+id/tv_date_range"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:text="Date"

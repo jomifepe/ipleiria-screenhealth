@@ -59,6 +59,10 @@ class DataRepository(
         return packageSessions
     }
 
+    suspend fun getUnlocks(startTime: Long, endTime: Long): List<Unlock> {
+        return unlocksDao.getUnlocks(startTime, endTime)
+    }
+
     suspend fun insertUnlock(unlock: Unlock) {
         unlocksDao.insert(unlock)
     }

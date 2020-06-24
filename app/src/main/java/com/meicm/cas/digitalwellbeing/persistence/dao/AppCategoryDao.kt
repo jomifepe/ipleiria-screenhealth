@@ -18,8 +18,14 @@ interface AppCategoryDao {
     @Insert
     fun insert(appCategory: AppCategory)
 
+    @Insert
+    fun insert(appCategory: List<AppCategory>)
+
     @Update
     fun update(appCategory: AppCategory)
+
+    @Update
+    fun update(appCategories: List<AppCategory>)
 
     @Delete
     fun delete(appCategory: AppCategory)

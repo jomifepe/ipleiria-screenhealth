@@ -21,7 +21,7 @@ class SnoozeUsageWarningBroadcaster: BroadcastReceiver() {
                         snoozeNotifications(context!!, extras.getInt(Constant.NOTIFICATION_ID))
                     }
                 }
-                else -> Log.d(Const.LOG_TAG, "No notification action found")
+                else -> Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] No notification action found")
             }
         }
     }
@@ -35,15 +35,5 @@ class SnoozeUsageWarningBroadcaster: BroadcastReceiver() {
         AppPreferences.with(context).save(Const.PREFS_KEY_SNOOZE_LONG, System.currentTimeMillis())
         Log.d(Const.LOG_TAG, "Registered snooze")
         NotificationManagerCompat.from(context).cancel(notificationId)
-
-        // Add snooze record to the database with the current date
-//        runBlocking {
-//            launch(Dispatchers.Default) {
-//                AppDatabase
-//                    .getDatabase(context)
-//                    .snoozeDao()
-//                    .insert(Snooze(0, cal.timeInMillis))
-//            }
-//        }
     }
 }

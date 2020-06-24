@@ -5,16 +5,23 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.os.IBinder
 import android.util.Log
+import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
+import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
+import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
 import com.meicm.cas.digitalwellbeing.util.Const
+import getAppName
+import getInstalledPackages
 import kotlinx.coroutines.*
-import java.text.SimpleDateFormat
+import setStartOfDay
 import java.util.*
-import kotlin.collections.HashMap
+
 
 class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
     override fun onBind(intent: Intent?): IBinder? {
@@ -25,15 +32,11 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
     override fun onCreate() {
         super.onCreate()
         Log.d(Const.LOG_TAG, "Registered app usage gatherer service")
-        gatherUsageStats()
+        startGatheringData()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
-    }
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        return super.onUnbind(intent)
     }
 
     override fun onHandleIntent(intent: Intent?) {
@@ -45,19 +48,28 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
         Log.d(Const.LOG_TAG, "App usage gatherer service destroyed")
     }
 
-    private fun gatherUsageStats() {
+    private fun startGatheringData() {
         runBlocking {
+            CoroutineScope(Dispatchers.IO).launch {
+                gatherInstalledPackagesCategories()
+            }
+
+            /* Check if there are apps that are currently open */
             val openSessions = withContext(Dispatchers.IO) {
                 return@withContext AppDatabase
                     .getDatabase(this@AppUsageGathererService)
                     .appSessionDao()
                     .getOpenSessions()
             }
+            /* If there are open apps */
             if(openSessions.isNotEmpty())
             {
+                /* Query the usage api to check if the open apps were closed since the last time
+                   the database was updated */
                 closeOpenedSessions(openSessions)
             }
 
+            /* Get the last app session from the database */
             val lastSession = withContext(Dispatchers.IO) {
                 return@withContext AppDatabase
                     .getDatabase(this@AppUsageGathererService)
@@ -68,16 +80,84 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
             val startTime = if(lastSession == null){
                 //TODO: Choose a better start time it should be old
                 val cal = Calendar.getInstance()
-                cal.set(Calendar.HOUR_OF_DAY, 0)
-                cal.set(Calendar.MINUTE, 0)
-                cal.set(Calendar.SECOND, 0)
+                cal.setStartOfDay()
+                cal.add(Calendar.DAY_OF_YEAR, -7)
                 cal.timeInMillis
             }else{
                 lastSession.startTimestamp + 1
             }
             gatherUsageStats(startTime, System.currentTimeMillis())
         }
-        loadUnlockEntries(startTime, endTime)
+
+        val startTime = Calendar.getInstance()
+        startTime.setStartOfDay()
+        startTime.set(Calendar.DAY_OF_YEAR, -7)
+        loadUnlockEntries(startTime.timeInMillis, System.currentTimeMillis())
+    }
+
+    private suspend fun gatherInstalledPackagesCategories() {
+        Log.d(Const.LOG_TAG, "[CATG] Starting category gathering")
+        val _start = System.nanoTime()
+        val installedPackages = getInstalledPackages(this)
+        val googlePlayService: GooglePlayService = GooglePlayService.create()
+
+        val newAppCategories: MutableList<AppCategory> = mutableListOf()
+        val updatedAppCategories: MutableList<AppCategory> = mutableListOf()
+        for (pkg in installedPackages) {
+            if (/* is system app */ pkg.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
+
+            try {
+                val appCategory = getAppCategory(pkg.packageName)
+
+                if (/* doesn't exist */ appCategory == null) {
+                    val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
+                    newAppCategories.add(AppCategory(0, pkg.packageName, element?.category))
+                } else {
+                    if (appCategory.category != null) continue
+                    val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
+                    appCategory.category = element?.category
+                    updatedAppCategories.add(appCategory)
+                }
+            } catch (ex: Exception) {
+                val existingAppCategory = getAppCategory(pkg.packageName)
+                if (/* doesn't exist */ existingAppCategory == null) {
+                    newAppCategories.add(AppCategory(0, pkg.packageName, null))
+                    Log.d(Const.LOG_TAG, "[CATG] No play store page available for app ${pkg.packageName}")
+                }
+            }
+        }
+
+        if (newAppCategories.size > 0) {
+            createNewAppCategories(newAppCategories)
+            Log.d(Const.LOG_TAG, "[CATG] Gathered ${newAppCategories.size} new categories")
+        }
+        if (updatedAppCategories.size > 0) {
+            updateAppCategories(updatedAppCategories)
+            Log.d(Const.LOG_TAG, "[CATG] Updated ${newAppCategories.size} new categories")
+        }
+        val _end = System.nanoTime()
+        Log.d(Const.LOG_TAG, "[CATG] Elapsed time ${(_end - _start) / 1_000_000_000} seconds")
+    }
+
+    private fun getAppCategory(packageName: String): AppCategory? {
+        return AppDatabase
+                .getDatabase(this)
+                .appCategoryDao()
+                .getAppCategory(packageName)
+    }
+
+    private fun createNewAppCategories(appCategory: List<AppCategory>) {
+        AppDatabase
+            .getDatabase(this)
+            .appCategoryDao()
+            .insert(appCategory)
+    }
+
+    private fun updateAppCategories(appCategories: List<AppCategory>) {
+        AppDatabase
+            .getDatabase(this)
+            .appCategoryDao()
+            .update(appCategories)
     }
 
     private fun closeOpenedSessions(openSessions: List<AppSession>) {
@@ -135,7 +215,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
                 dbAppSessionList.add(AppSession(0, pkg, it.first, it.second))
             }
             if(session.value.size > 0) {
-                usageStatsList.add(Pair(getAppName(session.key), totalPerApp))
+                usageStatsList.add(Pair(getAppName(this, session.key), totalPerApp))
                 totalTime += totalPerApp
                 totalPerApp = 0L
             }
@@ -155,8 +235,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
     private fun processAppsUsageSessions(manager: UsageStatsManager, startTime: Long, endTime: Long)
             : HashMap<String, MutableList<Pair<Long, Long?>>>
     {
-        val usageEvents: UsageEvents =
-            manager.queryEvents(startTime, endTime)
+        val usageEvents: UsageEvents = manager.queryEvents(startTime, endTime)
         val appSessions = hashMapOf<String, MutableList<Pair<Long, Long?>>>()
         val currentAppTimestamps = hashMapOf<String, Long?>()
 
@@ -180,7 +259,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
             }
         }
 
-        logAppSessions(appSessions)
+//        logAppSessions(appSessions)
         return appSessions
     }
 
@@ -212,7 +291,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
         }
     }
 
-    private fun loadUnlockEntries(startTime: Calendar, endTime: Calendar) {
+    private fun loadUnlockEntries(startTime: Long, endTime: Long) {
         val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         runBlocking {
@@ -224,8 +303,8 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
                 return@withContext unlock?.startTimestamp
             }
 
-            val startTimeStamp = lastUnlockTimestap ?: startTime.timeInMillis
-            val usageEvents: UsageEvents = manager.queryEvents(startTimeStamp, endTime.timeInMillis)
+            val startTimeStamp = lastUnlockTimestap ?: startTime
+            val usageEvents: UsageEvents = manager.queryEvents(startTimeStamp, endTime)
             val listUnlocks = mutableListOf<Unlock>()
 
             var previousUnlock: Unlock? = null
@@ -233,8 +312,8 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
                 val event: UsageEvents.Event = UsageEvents.Event()
                 usageEvents.getNextEvent(event)
 
-                if (event.timeStamp < startTime.timeInMillis ||
-                    event.timeStamp > endTime.timeInMillis) continue
+                if (event.timeStamp < startTime ||
+                    event.timeStamp > endTime) continue
 
                 if (event.eventType == UsageEvents.Event.SCREEN_INTERACTIVE) {
                     previousUnlock = Unlock(0, event.timeStamp, null)
@@ -260,11 +339,6 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
         }
     }
 
-    private fun getAppName(packageName: String): String{
-        val appInfo = packageManager.getApplicationInfo(packageName, 0)
-        return appInfo.loadLabel(packageManager).toString()
-    }
-
     private fun getHMS(timeInMillis: Long): Triple<Long, Long, Long> {
         val seconds: Long = (timeInMillis / 1000) % 60
         val minutes: Long = (timeInMillis / (1000 * 60)) % 60
@@ -286,7 +360,7 @@ class AppUsageGathererService: IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
         var diff = 0L
         appSessions.forEach{
             if(it.value.size > 0){
-                Log.d(Const.LOG_TAG, "App: ${getAppName(it.key)}")
+                Log.d(Const.LOG_TAG, "App: ${getAppName(this, it.key)}")
                 Log.d(Const.LOG_TAG, "")
             }
             it.value.forEach{

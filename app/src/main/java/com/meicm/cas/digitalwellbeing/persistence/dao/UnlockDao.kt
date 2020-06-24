@@ -9,6 +9,9 @@ interface UnlockDao {
     @Query("SELECT * FROM Unlocks")
     fun getAll(): LiveData<List<Unlock>>
 
+    @Query("SELECT * FROM Unlocks WHERE start_timestamp >= :startTime AND (end_timestamp <= :endTime OR end_timestamp IS NULL)")
+    fun getUnlocks(startTime: Long, endTime: Long): List<Unlock>
+
     @Insert
     fun insert(unlock: Unlock)
 

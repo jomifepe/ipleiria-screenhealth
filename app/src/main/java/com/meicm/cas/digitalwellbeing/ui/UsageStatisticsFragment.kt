@@ -8,29 +8,38 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import setEndOfDay
+import setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
-import com.meicm.cas.digitalwellbeing.service.UnlockService
-import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
-import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
+import com.meicm.cas.digitalwellbeing.communication.MessageEvent
+import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
+import com.meicm.cas.digitalwellbeing.service.UnlockService
+import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
+import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
+import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
 import getAppName
 import getHoursMinutesSeconds
 import kotlinx.android.synthetic.main.fragment_usage_statistics.*
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashMap
 
 private const val MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 3
 
@@ -41,20 +50,29 @@ class UsageStatisticsFragment: Fragment() {
 
     private var appUsageStatsList: List<UsageStats> = listOf()
     private var appCategories: List<AppCategory> = listOf()
-    private var appUsageSessions: List<AppSession> = listOf()
 
-    private var startTime: Long = 0L
-    private var endTime: Long = 0L
+    private var startTime: Long
+    private var endTime: Long
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        binding = DataBindingUtil.inflate<FragmentUsageStatisticsBinding>(
-            inflater,
+    init {
+        val start = Calendar.getInstance()
+        start.setStartOfDay()
+        val end = Calendar.getInstance()
+        end.setEndOfDay()
+
+        startTime = start.timeInMillis
+        endTime = end.timeInMillis
+    }
+
+    override fun onCreateView(inflater: LayoutInflater,
+                              container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+
+        binding = DataBindingUtil.inflate(inflater,
             R.layout.fragment_usage_statistics, container, false)
         setHasOptionsMenu(true)
 
+        setupEventBusListeners()
         setupList()
         subscribeViewModel()
 
@@ -80,6 +98,27 @@ class UsageStatisticsFragment: Fragment() {
         }
     }
 
+    private fun setupEventBusListeners() {
+        EventBus.getDefault().register(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onMessageEvent(messageEvent: MessageEvent) {
+        when (messageEvent.message) {
+            Const.EVENT_TIME_RANGE -> {
+                val event = messageEvent as TimeRangeMessageEvent
+                this.startTime = event.startTimestamp
+                this.endTime = event.endTimestamp
+
+                val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
+                Log.d(Const.LOG_TAG, "Change to the time range: [Start: ${sdf.format(this.startTime)}, End: ${sdf.format(this.endTime)}]")
+
+                updateUnlocksWithinRange()
+                updateAppSessionsWithinRange()
+            }
+        }
+    }
+
     private fun enableDataGathering() {
         val endTime = Calendar.getInstance()
         val startTime = Calendar.getInstance()
@@ -91,41 +130,14 @@ class UsageStatisticsFragment: Fragment() {
         this.endTime = endTime.timeInMillis
 
         requireContext().startService(Intent(requireContext(), AppUsageGathererService::class.java))
-
-//        usageViewModel.getAppSessions(this.startTime, this.endTime) {
-//            calculateTotalTimes(it)
-//        }
-
-//        runBlocking {
-//            CoroutineScope(Dispatchers.IO).launch {
-//                val sessions = AppDatabase
-//                    .getDatabase(requireContext())
-//                    .appSessionDao()
-//                    .getSessionByRange(startTime.timeInMillis, endTime.timeInMillis)
-//
-//                val packageSessions = HashMap<String, MutableList<AppSession>>()
-//
-//                val currentTimeMillis = System.currentTimeMillis()
-//                for (session in sessions) {
-//                    if (!packageSessions.containsKey(session.appPackage)) {
-//                        packageSessions[session.appPackage] = mutableListOf()
-//                    }
-//                    if (session.endTimestamp == null) {
-//                        session.endTimestamp = currentTimeMillis
-//                    }
-//                    packageSessions[session.appPackage]?.add(session)
-//                }
-//
-//                calculateTotalTimes(packageSessions)
-//            }
-//        }
     }
 
     private fun setupList() {
         appTimeAdapter = AppTimeUsageRecyclerAdapter(object: RecyclerViewItemShortClick {
             override fun onShortClick(view: View, position: Int) {
-                var stat: UsageStats = appUsageStatsList[position]
-                var category: AppCategory? = appCategories.find { it.appPackage == stat.packageName }
+                return
+                val stat: UsageStats = appUsageStatsList[position]
+                val category: AppCategory? = appCategories.find { it.appPackage == stat.packageName }
                 Toast.makeText(binding.root.context, category?.category, Toast.LENGTH_SHORT).show()
             }
         })
@@ -136,21 +148,32 @@ class UsageStatisticsFragment: Fragment() {
 
     private fun subscribeViewModel() {
         usageViewModel = ViewModelProvider(this).get(UsageViewModel::class.java)
-        usageViewModel.allUnlocks.observe(viewLifecycleOwner, Observer { unlocks ->
-            unlocks?.let { tv_total_unlocks.text = unlocks.size.toString() }
+
+        usageViewModel.allUnlocks.observe(viewLifecycleOwner, Observer {
+            it?.let { updateUnlocksWithinRange() }
         })
         usageViewModel.appCategories.observe(viewLifecycleOwner, Observer { data ->
             data?.let {
                 this.appCategories = data
             }
         })
-        usageViewModel.appSessions.observe(viewLifecycleOwner, Observer { data ->
-            data?.let {
-                usageViewModel.getAppSessions(this.startTime, this.endTime) {
-                    calculateTotalTimes(it)
-                }
-            }
+        usageViewModel.appSessions.observe(viewLifecycleOwner, Observer {
+            it?.let { updateAppSessionsWithinRange() }
         })
+    }
+
+    private fun updateUnlocksWithinRange() {
+        usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
+            requireActivity().runOnUiThread {
+                tv_total_unlocks.text = result.size.toString()
+            }
+        }
+    }
+
+    private fun updateAppSessionsWithinRange() {
+        usageViewModel.getAppSessions(this.startTime, this.endTime) {
+            calculateTotalTimes(it)
+        }
     }
 
     private fun calculateTotalTimes(data: HashMap<String, MutableList<AppSession>>) {

@@ -6,5 +6,7 @@ object Const {
     val LOG_TAG = "DW_LOGGING"
     val DATABASE_NAME = "DigitalWellbeing"
     val PREFS_NAME = "DW_Preferences"
+
     val PREFS_KEY_SNOOZE_LONG = "DW_Snooze"
+    val EVENT_TIME_RANGE = "com.meicm.cas.digitalwellbeing.event.timerange"
 }

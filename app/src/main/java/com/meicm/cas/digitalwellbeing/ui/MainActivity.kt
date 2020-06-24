@@ -4,26 +4,29 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.os.Bundle
-import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.findNavController
 import androidx.navigation.ui.NavigationUI
+import setEndOfDay
+import setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
+import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
 import com.meicm.cas.digitalwellbeing.util.Const
+import getDateStringFromEpoch
 import kotlinx.android.synthetic.main.activity_main.*
+import org.greenrobot.eventbus.EventBus
 import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
-    private var startTime: Long
-    private var endTime: Long
+    private var startTime: Calendar
+    private var endTime: Calendar
 
     init {
-        startTime = getStartOfDayMillis()
-        endTime = getEndOfDayMillis()
+        startTime = getStartOfDayCalendar()
+        endTime = getEndOfDayCalendar()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,12 +37,25 @@ class MainActivity : AppCompatActivity() {
         NavigationUI.setupActionBarWithNavController(this, navController)
         createNotificationChannel()
 
-//        bt_date_range_backwards.setOnClickListener {
-//            Toast.makeText(this, "Clicked", Toast.LENGTH_LONG).show()
-//        }
-//        bt_date_range_forward.setOnClickListener {
-//            Toast.makeText(this, "Clicked", Toast.LENGTH_LONG).show()
-//        }
+        updateTimeRangeLabel()
+
+        bt_date_range_backwards.setOnClickListener {
+            incrementOrDecrementTimeRange(-1)
+        }
+        bt_date_range_forward.setOnClickListener {
+            incrementOrDecrementTimeRange(1)
+        }
+    }
+
+    private fun incrementOrDecrementTimeRange(days: Int) {
+        startTime.add(Calendar.DAY_OF_YEAR, days)
+        endTime.add(Calendar.DAY_OF_YEAR, days)
+        EventBus.getDefault().post(TimeRangeMessageEvent(startTime.timeInMillis, endTime.timeInMillis))
+        updateTimeRangeLabel()
+    }
+
+    private fun updateTimeRangeLabel() {
+        tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis)
     }
 
     private fun createNotificationChannel() {
@@ -54,20 +70,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getStartOfDayMillis(): Long {
+    private fun getStartOfDayCalendar(): Calendar {
         val start = Calendar.getInstance()
-        start.set(Calendar.HOUR_OF_DAY, 0)
-        start.set(Calendar.MINUTE, 0)
-        start.set(Calendar.SECOND, 0)
-        start.set(Calendar.MILLISECOND, 0)
-        return start.timeInMillis
+        start.setStartOfDay()
+        return start
     }
-    private fun getEndOfDayMillis(): Long {
+    private fun getEndOfDayCalendar(): Calendar {
         val end = Calendar.getInstance()
-        end.set(Calendar.HOUR_OF_DAY, 23)
-        end.set(Calendar.MINUTE, 59)
-        end.set(Calendar.SECOND, 59)
-        end.set(Calendar.MILLISECOND, 999)
-        return end.timeInMillis
+        end.setEndOfDay()
+        return end
     }
 }
