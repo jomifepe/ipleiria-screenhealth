@@ -1,3 +1,5 @@
+package com.meicm.cas.digitalwellbeing.util
+
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -31,11 +33,11 @@ fun getHoursMinutesSeconds(timeInMillis: Long): Triple<Long, Long, Long> {
 }
 
 fun getAppName(context: Context, packageName: String): String {
-    try {
+    return try {
         val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
-        return appInfo.loadLabel(context.packageManager).toString()
+        appInfo.loadLabel(context.packageManager).toString()
     } catch (ex: PackageManager.NameNotFoundException) {
-        return packageName
+        packageName
     }
 }
 

@@ -1,19 +1,16 @@
 package com.meicm.cas.digitalwellbeing.remote
 
-import okhttp3.Interceptor
 import pl.droidsonroids.jspoon.annotation.Selector
 import pl.droidsonroids.retrofit2.JspoonConverterFactory
-import retrofit2.Call
 import retrofit2.Retrofit
-import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 const val BASE_URL = "https://play.google.com/store/"
 
 class GooglePlayCategory {
-    @Selector("a[itemprop='genre']") var category: String? = null
+    @Selector("a[itemprop='genre']")
+    var category: String? = null
 }
 
 interface GooglePlayService {

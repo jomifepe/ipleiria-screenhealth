@@ -10,7 +10,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
-import compareTimestampsDateEqual
+import com.meicm.cas.digitalwellbeing.util.compareTimestampsDateEqual
 import kotlinx.coroutines.*
 import java.util.*
 

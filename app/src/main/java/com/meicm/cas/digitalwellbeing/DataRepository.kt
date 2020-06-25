@@ -1,7 +1,5 @@
 package com.meicm.cas.digitalwellbeing
 
-import android.se.omapi.Session
-import android.util.Log
 import androidx.lifecycle.LiveData
 import com.meicm.cas.digitalwellbeing.persistence.dao.AppCategoryDao
 import com.meicm.cas.digitalwellbeing.persistence.dao.AppSessionDao
@@ -11,8 +9,7 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
-import com.meicm.cas.digitalwellbeing.util.Const
-import compareTimestampsDateEqual
+import com.meicm.cas.digitalwellbeing.util.compareTimestampsDateEqual
 import java.lang.Exception
 
 class DataRepository(

@@ -7,7 +7,6 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.NotificationId
 import java.util.*
 import com.meicm.cas.digitalwellbeing.UsageWarningBroadcaster.Constant as Constant
 

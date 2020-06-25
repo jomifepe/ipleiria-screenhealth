@@ -18,8 +18,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import setEndOfDay
-import setStartOfDay
+import com.meicm.cas.digitalwellbeing.util.setEndOfDay
+import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.MessageEvent
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
@@ -32,8 +32,8 @@ import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
-import getAppName
-import getHoursMinutesSeconds
+import com.meicm.cas.digitalwellbeing.util.getAppName
+import com.meicm.cas.digitalwellbeing.util.getHoursMinutesSeconds
 import kotlinx.android.synthetic.main.fragment_usage_statistics.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -190,9 +190,9 @@ class UsageStatisticsFragment : Fragment() {
 
     private fun calculateTotalTimes(data: HashMap<String, MutableList<AppSession>>) {
         val appSessionList = mutableListOf<Pair<String, Long>>()
-        var totalScreenTime: Long = 0L
+        var totalScreenTime = 0L
         data.forEach { app ->
-            var totalTime: Long = 0L
+            var totalTime = 0L
             app.value.forEach {
                 totalTime += it.endTimestamp!! - it.startTimestamp
             }
@@ -237,7 +237,7 @@ class UsageStatisticsFragment : Fragment() {
     }
 
     private fun hasUsagePermission(): Boolean {
-        try {
+        return try {
             val applicationInfo =
                 requireContext().packageManager.getApplicationInfo(requireContext().packageName, 0)
             val appOpsManager =
@@ -247,9 +247,9 @@ class UsageStatisticsFragment : Fragment() {
                 applicationInfo.uid,
                 applicationInfo.packageName
             )
-            return mode == AppOpsManager.MODE_ALLOWED
+            mode == AppOpsManager.MODE_ALLOWED
         } catch (e: PackageManager.NameNotFoundException) {
-            return false
+            false
         }
     }
 
@@ -290,7 +290,7 @@ class UsageStatisticsFragment : Fragment() {
 //                }
 //            }
 //            if(it.value.size > 0) {
-//                tableList.add(Pair(getAppName(it.key), totalPerApp))
+//                tableList.add(Pair(com.meicm.cas.digitalwellbeing.util.getAppName(it.key), totalPerApp))
 //                totalTime += totalPerApp
 //                totalPerApp = 0L
 //            }
@@ -326,7 +326,7 @@ class UsageStatisticsFragment : Fragment() {
 //                /*val hms = getHMS(Calendar.getInstance().timeInMillis - it.value!!)
 //                Log.d(
 //                    Const.LOG_TAG,
-//                    "APP: ${getAppName(it.key)} used for: ${hms.first}h ${hms.second}min ${hms.third}s FROM ${epochToString(it.value!!)} TO ${epochToString(Calendar.getInstance().timeInMillis)}"
+//                    "APP: ${com.meicm.cas.digitalwellbeing.util.getAppName(it.key)} used for: ${hms.first}h ${hms.second}min ${hms.third}s FROM ${epochToString(it.value!!)} TO ${epochToString(Calendar.getInstance().timeInMillis)}"
 //                )*/
 //            }
 //        }
@@ -341,7 +341,7 @@ class UsageStatisticsFragment : Fragment() {
 //        var diff = 0L
 //        appSessions.forEach{
 //            if(it.value.size > 0){
-//                Log.d(Const.LOG_TAG, "App: ${getAppName(it.key)}")
+//                Log.d(Const.LOG_TAG, "App: ${com.meicm.cas.digitalwellbeing.util.getAppName(it.key)}")
 //                Log.d(Const.LOG_TAG, "")
 //            }
 //            it.value.forEach{
@@ -443,7 +443,7 @@ class UsageStatisticsFragment : Fragment() {
 //                "${date.get(Calendar.HOUR_OF_DAY)}h ${date.get(Calendar.MINUTE)}m ${date.get(Calendar.SECOND)}s"
 //    }
 //
-//    private fun getAppName(packageName: String): String{
+//    private fun com.meicm.cas.digitalwellbeing.util.getAppName(packageName: String): String{
 //        val appInfo = requireContext().packageManager.getApplicationInfo(packageName, 0)
 //        return appInfo.loadLabel(requireContext().packageManager).toString()
 //    }

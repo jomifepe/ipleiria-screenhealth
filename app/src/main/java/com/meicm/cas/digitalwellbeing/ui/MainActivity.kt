@@ -8,13 +8,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.findNavController
 import androidx.navigation.ui.NavigationUI
-import setEndOfDay
-import setStartOfDay
+import com.meicm.cas.digitalwellbeing.util.setEndOfDay
+import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
 import com.meicm.cas.digitalwellbeing.util.Const
-import getDateStringFromEpoch
+import com.meicm.cas.digitalwellbeing.util.getDateStringFromEpoch
 import kotlinx.android.synthetic.main.activity_main.*
 import org.greenrobot.eventbus.EventBus
 import java.util.*
@@ -62,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name: String = "General"
+            val name = "General"
             val channel = NotificationChannel(
                 Const.NOTIFICATION_CHANNEL_GENERAL,
                 name,

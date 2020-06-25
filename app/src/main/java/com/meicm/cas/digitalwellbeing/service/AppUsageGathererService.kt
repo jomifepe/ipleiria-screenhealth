@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.IBinder
 import android.util.Log
-import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
@@ -16,10 +15,10 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
 import com.meicm.cas.digitalwellbeing.util.Const
-import getAppName
-import getInstalledPackages
+import com.meicm.cas.digitalwellbeing.util.getAppName
+import com.meicm.cas.digitalwellbeing.util.getInstalledPackages
 import kotlinx.coroutines.*
-import setStartOfDay
+import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import java.util.*
 
 
@@ -245,7 +244,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                 /*val hms = getHMS(Calendar.getInstance().timeInMillis - it.value!!)
                 Log.d(
                     Const.LOG_TAG,
-                    "APP: ${getAppName(it.key)} used for: ${hms.first}h ${hms.second}min ${hms.third}s FROM ${epochToString(it.value!!)} TO ${epochToString(Calendar.getInstance().timeInMillis)}"
+                    "APP: ${com.meicm.cas.digitalwellbeing.util.getAppName(it.key)} used for: ${hms.first}h ${hms.second}min ${hms.third}s FROM ${epochToString(it.value!!)} TO ${epochToString(Calendar.getInstance().timeInMillis)}"
                 )*/
             }
         }
@@ -311,7 +310,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
             val usageEvents: UsageEvents = manager.queryEvents(startTimeStamp, endTime)
             val listUnlocks = mutableListOf<Unlock>()
             var previousUnlock: Unlock? = null
-            
+
             while (usageEvents.hasNextEvent()) {
                 val event: UsageEvents.Event = UsageEvents.Event()
                 usageEvents.getNextEvent(event)
@@ -368,12 +367,12 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         var totalPerApp = 0L
         var total = 0L
         var diff = 0L
-        appSessions.forEach {
-            if (it.value.size > 0) {
-                Log.d(Const.LOG_TAG, "App: ${getAppName(this, it.key)}")
+        appSessions.forEach {sessions ->
+            if (sessions.value.size > 0) {
+                Log.d(Const.LOG_TAG, "App: ${getAppName(this, sessions.key)}")
                 Log.d(Const.LOG_TAG, "")
             }
-            it.value.forEach {
+            sessions.value.forEach {
                 if (it.second == null) {
                     diff = Calendar.getInstance().timeInMillis - it.first
                     val hms = getHMS(diff)
@@ -398,7 +397,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                 totalPerApp += diff
 
             }
-            if (it.value.size > 0) {
+            if (sessions.value.size > 0) {
                 val hms = getHMS(totalPerApp)
                 Log.d(Const.LOG_TAG, "App total: ${hms.first}h ${hms.second}min ${hms.third}s")
             }

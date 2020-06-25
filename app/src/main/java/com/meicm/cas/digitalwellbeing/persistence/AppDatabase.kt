@@ -12,13 +12,13 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.util.Const
 
-@Database(entities = arrayOf(
-    Unlock::class,
-    AppCategory::class,
-    AppSession::class
-), version = 1, exportSchema = false)
+@Database(
+    entities = [Unlock::class, AppCategory::class, AppSession::class],
+    version = 1,
+    exportSchema = false
+)
 
-abstract class AppDatabase: RoomDatabase() {
+abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
