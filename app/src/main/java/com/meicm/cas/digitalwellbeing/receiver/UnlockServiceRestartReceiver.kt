@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context

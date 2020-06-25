@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.receiver
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -7,10 +7,9 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
-import java.util.*
-import com.meicm.cas.digitalwellbeing.UsageWarningBroadcaster.Constant as Constant
+import com.meicm.cas.digitalwellbeing.receiver.UsageWarningReceiver.Constant as Constant
 
-class SnoozeUsageWarningBroadcaster: BroadcastReceiver() {
+class SnoozeUsageWarningReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) return
         when (intent.action) {

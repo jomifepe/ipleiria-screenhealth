@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.receiver
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.meicm.cas.digitalwellbeing.State
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
@@ -62,7 +63,8 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
             AppDatabase
                 .getDatabase(context)
                 .unlockDao()
-                .insert(Unlock(0, State.unlockTime, null))
+                .insert(Unlock(0,
+                    State.unlockTime, null))
             Log.d(Const.LOG_TAG, "Inserted unlock into the database")
         }
 
@@ -86,7 +88,7 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
     }
 
     private fun launchWarningRepeatingTimer(context: Context, repeating: Boolean) {
-        val alarmIntent = Intent(context, UsageWarningBroadcaster::class.java)
+        val alarmIntent = Intent(context, UsageWarningReceiver::class.java)
         alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
 
         val cal = Calendar.getInstance()

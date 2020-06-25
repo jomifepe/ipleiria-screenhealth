@@ -3,17 +3,15 @@ package com.meicm.cas.digitalwellbeing.service
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
-import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
+import com.meicm.cas.digitalwellbeing.receiver.ScreenInteractiveReceiver
 import com.meicm.cas.digitalwellbeing.State
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.isAppFirstRun
 
 class UnlockService: Service() {
     override fun onBind(intent: Intent?): IBinder? {

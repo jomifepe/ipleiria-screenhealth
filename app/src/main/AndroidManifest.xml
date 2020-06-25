@@ -28,15 +28,15 @@
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".UsageWarningBroadcaster"
+            android:name=".receiver.UsageWarningReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".SnoozeUsageWarningBroadcaster"
+            android:name=".receiver.SnoozeUsageWarningReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".UnlockServiceRestartReceiver"
+            android:name=".receiver.UnlockServiceRestartReceiver"
             android:enabled="true"
             android:exported="true" />
     </application>

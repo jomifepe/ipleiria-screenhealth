@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.receiver
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -7,11 +7,12 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.NotificationId
 
-class UsageWarningBroadcaster: BroadcastReceiver() {
+class UsageWarningReceiver: BroadcastReceiver() {
     object Constant {
         const val ACTION_EXTRAS: String = "usage_warning.extras"
         const val ACTION_SNOOZE: String = "android.intent.action.ACTION_SNOOZE"
@@ -21,8 +22,9 @@ class UsageWarningBroadcaster: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         val notificationId: Int = NotificationId.getNewId()
         Log.d(Const.LOG_TAG, "Generating notification id $notificationId")
-        val snoozeIntent: Intent = Intent(context, SnoozeUsageWarningBroadcaster::class.java).apply {
-            action = Constant.ACTION_SNOOZE
+        val snoozeIntent: Intent = Intent(context, SnoozeUsageWarningReceiver::class.java).apply {
+            action =
+                Constant.ACTION_SNOOZE
             putExtra(Constant.NOTIFICATION_ID, notificationId)
             Log.d(Const.LOG_TAG, "Putting notification id $notificationId as intent extra")
         }
@@ -33,7 +35,10 @@ class UsageWarningBroadcaster: BroadcastReceiver() {
             .setContentTitle("Usage Warning #$notificationId")
             .setContentText("You've been using your device for a long period of time. If you're not doing something important, consider resting for a bit.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .addAction(R.drawable.ic_snooze_black, context.getString(R.string.label_snooze), snoozePI)
+            .addAction(
+                R.drawable.ic_snooze_black, context.getString(
+                    R.string.label_snooze
+                ), snoozePI)
 
         val notificationManager = NotificationManagerCompat.from(context)
 
