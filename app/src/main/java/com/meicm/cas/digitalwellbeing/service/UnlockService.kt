@@ -10,7 +10,10 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
 import com.meicm.cas.digitalwellbeing.ScreenInteractiveReceiver
+import com.meicm.cas.digitalwellbeing.State
+import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
+import com.meicm.cas.digitalwellbeing.util.isAppFirstRun
 
 class UnlockService: Service() {
     override fun onBind(intent: Intent?): IBinder? {
@@ -19,36 +22,50 @@ class UnlockService: Service() {
     }
 
     override fun onCreate() {
-        val filter = IntentFilter(Intent.ACTION_SCREEN_ON)
-        filter.addAction(Intent.ACTION_SCREEN_OFF)
-        val mReceiver: BroadcastReceiver =
-            ScreenInteractiveReceiver()
-        registerReceiver(mReceiver, filter)
+        val filter =
+            IntentFilter(Const.ACTION_FIRST_LAUNCH)
+            filter.addAction(Intent.ACTION_SCREEN_OFF)
+            filter.addAction(Intent.ACTION_SCREEN_ON)
+        registerReceiver(ScreenInteractiveReceiver(), filter)
+
+//        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
         Log.d(Const.LOG_TAG, "Registered broadcast receiver")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        onTaskRemoved(intent)
+        when (intent?.action) {
+            // send broadcast to trigger and "unlock" because the service was down
+            Const.ACTION_FIRST_LAUNCH -> sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
+        }
         return START_STICKY
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        val restartServiceIntent = Intent(applicationContext, this.javaClass)
-        restartServiceIntent.setPackage(packageName)
-        startService(restartServiceIntent)
-        super.onTaskRemoved(rootIntent)
-    }
+//    override fun onTaskRemoved(rootIntent: Intent?) {
+//        val restartServiceIntent = Intent(applicationContext, this.javaClass)
+//        restartServiceIntent.setPackage(packageName)
+//        startService(restartServiceIntent)
+//        Log.d(Const.LOG_TAG, "onTaskRemoved")
+//    }
 
-    override fun onUnbind(intent: Intent?): Boolean {
-        tryToDestroyReceiver()
-        return super.onUnbind(intent)
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d(Const.LOG_TAG, "onTaskRemoved")
+        sendBroadcast(Intent(Const.ACTION_UNLOCK_SERVICE_RESTART))
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d(Const.LOG_TAG, "Unlock Service destroyed")
-
         tryToDestroyReceiver()
+    }
+
+    private fun saveCurrentUsageWarningTimer() {
+        if (State.unlockTime == null) return
+        val elapsedTime = System.currentTimeMillis() - State.unlockTime!!
+        AppPreferences
+            .with(this)
+            .save(Const.PREF_UW_LAST_TIME, elapsedTime)
+        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 
     private fun tryToDestroyReceiver() {
@@ -64,7 +81,7 @@ class UnlockService: Service() {
         }
     }
 
-    //    override fun onDestroy() {
+//    override fun onDestroy() {
 //        val broadcastIntent = Intent()
 //        broadcastIntent.action = "restartservice"
 //        broadcastIntent.setClass(this, BroadcastReceiverRestarter::class.java)

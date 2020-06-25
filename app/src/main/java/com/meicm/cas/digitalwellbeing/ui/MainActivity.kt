@@ -13,6 +13,7 @@ import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
+import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.getDateStringFromEpoch
 import kotlinx.android.synthetic.main.activity_main.*
@@ -36,8 +37,9 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.myNavHostFragment)
 
         NavigationUI.setupActionBarWithNavController(this, navController)
-        createNotificationChannel()
 
+        incrementAppRunCount()
+        createNotificationChannel()
         updateTimeRangeLabel()
 
         bt_date_range_backwards.setOnClickListener {
@@ -46,6 +48,12 @@ class MainActivity : AppCompatActivity() {
         bt_date_range_forward.setOnClickListener {
             incrementOrDecrementTimeRange(1)
         }
+    }
+
+    private fun incrementAppRunCount() {
+        val pref = AppPreferences.with(this)
+        val runCount = pref.getInt(Const.PREF_APP_RUN, 0)
+        if (runCount < 2) pref.save(Const.PREF_APP_RUN, runCount + 1)
     }
 
     private fun incrementOrDecrementTimeRange(days: Int) {

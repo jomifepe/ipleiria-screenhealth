@@ -18,8 +18,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.meicm.cas.digitalwellbeing.util.setEndOfDay
-import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.MessageEvent
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
@@ -30,10 +28,8 @@ import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
 import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
 import com.meicm.cas.digitalwellbeing.ui.adapter.RecyclerViewItemShortClick
-import com.meicm.cas.digitalwellbeing.util.Const
+import com.meicm.cas.digitalwellbeing.util.*
 import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
-import com.meicm.cas.digitalwellbeing.util.getAppName
-import com.meicm.cas.digitalwellbeing.util.getHoursMinutesSeconds
 import kotlinx.android.synthetic.main.fragment_usage_statistics.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -51,6 +47,8 @@ class UsageStatisticsFragment : Fragment() {
     private var appUsageStatsList: List<UsageStats> = listOf()
     private var appCategories: List<AppCategory> = listOf()
 
+    private var unlockCount: Int = 0
+
     private var startTime: Long
     private var endTime: Long
 
@@ -64,12 +62,7 @@ class UsageStatisticsFragment : Fragment() {
         endTime = end.timeInMillis
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(
             inflater,
             R.layout.fragment_usage_statistics, container, false
@@ -79,9 +72,7 @@ class UsageStatisticsFragment : Fragment() {
         setupEventBusListeners()
         setupList()
         subscribeViewModel()
-
-        // Enable lock/unlock service
-        requireContext().startService(Intent(requireContext(), UnlockService::class.java))
+        startUnlocksService()
 
         if (!hasUsagePermission()) {
             showUsagePermissionDialog()
@@ -92,6 +83,15 @@ class UsageStatisticsFragment : Fragment() {
         return binding.root
     }
 
+    private fun startUnlocksService() {
+        if (!isServiceRunning(requireContext(), UnlockService::class.java)) {
+            val service = Intent(requireContext(), UnlockService::class.java).apply {
+                action = Const.ACTION_FIRST_LAUNCH
+            }
+            requireContext().startService(service)
+        }
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
@@ -100,6 +100,16 @@ class UsageStatisticsFragment : Fragment() {
                 enableDataGathering()
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d(Const.LOG_TAG, "Paused")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(Const.LOG_TAG, "Resumed")
     }
 
     private fun setupEventBusListeners() {
@@ -117,9 +127,7 @@ class UsageStatisticsFragment : Fragment() {
                 val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
                 Log.d(
                     Const.LOG_TAG,
-                    "Change to the time range: [Start: ${sdf.format(this.startTime)}, End: ${sdf.format(
-                        this.endTime
-                    )}]"
+                    "Change to the time range: [Start: ${this.startTime}, End: ${this.endTime}]"
                 )
 
                 updateUnlocksWithinRange()
@@ -129,15 +137,6 @@ class UsageStatisticsFragment : Fragment() {
     }
 
     private fun enableDataGathering() {
-        val endTime = Calendar.getInstance()
-        val startTime = Calendar.getInstance()
-        startTime.set(Calendar.HOUR_OF_DAY, 0)
-        startTime.set(Calendar.MINUTE, 0)
-        startTime.set(Calendar.SECOND, 0)
-
-        this.startTime = startTime.timeInMillis
-        this.endTime = endTime.timeInMillis
-
         requireContext().startService(Intent(requireContext(), AppUsageGathererService::class.java))
     }
 
@@ -176,9 +175,13 @@ class UsageStatisticsFragment : Fragment() {
 
     private fun updateUnlocksWithinRange() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
-            requireActivity().runOnUiThread {
-                tv_total_unlocks.text = result.size.toString()
-            }
+//            if (result.size > unlockCount) {
+                unlockCount = result.size
+                requireActivity().runOnUiThread {
+                    Log.d(Const.LOG_TAG, "updateUnlocksWithinRange $unlockCount")
+                    tv_total_unlocks.text = unlockCount.toString()
+                }
+//            }
         }
     }
 

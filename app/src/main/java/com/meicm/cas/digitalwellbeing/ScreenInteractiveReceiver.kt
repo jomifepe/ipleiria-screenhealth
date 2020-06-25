@@ -11,6 +11,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.compareTimestampsDateEqual
+import com.meicm.cas.digitalwellbeing.util.getDateStringFromEpoch
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -21,73 +22,86 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         alarmManager = context!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val action = intent!!.action
-        if (Intent.ACTION_SCREEN_ON == action) {
-            Log.d(Const.LOG_TAG, "Unlocked")
+        when (intent?.action) {
+            Const.ACTION_FIRST_LAUNCH -> tryLaunchUsageWarningTimer(context)
+            Intent.ACTION_SCREEN_ON -> performUnlockActions(context)
+            Intent.ACTION_SCREEN_OFF -> performLockActions(context)
+        }
+    }
 
-            State.isUnlocked = true
-            State.unlockTime = System.currentTimeMillis()
+    private fun performLockActions(context: Context) {
+        Log.d(Const.LOG_TAG, "Locked")
 
-            runBlocking {
-                launch(Dispatchers.IO) {
-                    AppDatabase
-                        .getDatabase(context)
-                        .unlockDao()
-                        .insert(Unlock(0, State.unlockTime, null))
-                }
-            }
+        State.isUnlocked = false
 
-            val pref = AppPreferences.with(context)
-            if (pref.contains(Const.PREFS_KEY_SNOOZE_LONG)) {
-                val timestamp = pref.getLong(Const.PREFS_KEY_SNOOZE_LONG, 0L)
-                val snoozeIsToday =
-                    compareTimestampsDateEqual(timestamp, System.currentTimeMillis())
+        CoroutineScope(Dispatchers.IO).launch {
+            AppDatabase
+                .getDatabase(context)
+                .unlockDao()
+                .updateLastUnlockEndTimestamp(System.currentTimeMillis())
+            Log.d(Const.LOG_TAG, "Closing last unlock")
+        }
 
-                if (!snoozeIsToday) {
-                    launchWarningRepeatingTimer(context, false)
-                } else {
-                    Log.d(Const.LOG_TAG, "Snooze detected, no notification timer started")
-                }
+        // TODO: Fix no alarm clear when the app is killed
+        // Cancel existing alarm
+        if (alarmPI != null) {
+            Log.d(Const.LOG_TAG, "Cancelling existing alarm")
+            alarmManager.cancel(alarmPI)
+        } else {
+            Log.d(Const.LOG_TAG, "No alarms to cancel")
+        }
+    }
+
+    private fun performUnlockActions(context: Context) {
+        Log.d(Const.LOG_TAG, "Unlocked")
+
+        State.isUnlocked = true
+        State.unlockTime = System.currentTimeMillis()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            AppDatabase
+                .getDatabase(context)
+                .unlockDao()
+                .insert(Unlock(0, State.unlockTime, null))
+            Log.d(Const.LOG_TAG, "Inserted unlock into the database")
+        }
+
+        tryLaunchUsageWarningTimer(context)
+    }
+
+    private fun tryLaunchUsageWarningTimer(context: Context) {
+        val pref = AppPreferences.with(context)
+        if (pref.contains(Const.PREF_KEY_SNOOZE_LONG)) {
+            val timestamp = pref.getLong(Const.PREF_KEY_SNOOZE_LONG, 0L)
+            val snoozeIsToday = compareTimestampsDateEqual(timestamp, System.currentTimeMillis())
+
+            if (!snoozeIsToday) {
+                launchWarningRepeatingTimer(context, true)
             } else {
-                launchWarningRepeatingTimer(context, false)
+                Log.d(Const.LOG_TAG, "Snooze detected, no usage warning timer started")
             }
-
-        } else if (Intent.ACTION_SCREEN_OFF == action) {
-            Log.d(Const.LOG_TAG, "Locked")
-
-            State.isUnlocked = false
-
-            runBlocking {
-                launch(Dispatchers.Default) {
-                    AppDatabase
-                        .getDatabase(context)
-                        .unlockDao()
-                        .updateLastUnlockEndTimestamp(System.currentTimeMillis())
-                }
-            }
-
-            // Cancel existing alarm
-            if (alarmPI != null) {
-                Log.d(Const.LOG_TAG, "Cancelling existing alarm")
-                alarmManager.cancel(alarmPI)
-            } else {
-                Log.d(Const.LOG_TAG, "No alarms to cancel")
-            }
+        } else {
+            launchWarningRepeatingTimer(context, true)
         }
     }
 
     private fun launchWarningRepeatingTimer(context: Context, repeating: Boolean) {
-        Log.d(Const.LOG_TAG, "Starting usage notification timer")
         val alarmIntent = Intent(context, UsageWarningBroadcaster::class.java)
         alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
 
         val cal = Calendar.getInstance()
         cal.add(Calendar.SECOND, 5)
 
+//        val defaultTime = 30 * 6000L
+        val defaultDuration = 5000L
+        val alarmTime = System.currentTimeMillis() +
+                AppPreferences.with(context).getLong(Const.PREF_UW_LAST_TIME, defaultDuration)
+        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateStringFromEpoch(alarmTime)} s")
+
         if (repeating) {
-            alarmManager.setRepeating(AlarmManager.RTC, cal.timeInMillis, 60000, alarmPI)
+            alarmManager.setRepeating(AlarmManager.RTC, /* first trigger */ alarmTime, /* repeat */ 60000, alarmPI)
         } else {
-            alarmManager.set(AlarmManager.RTC, cal.timeInMillis, alarmPI)
+            alarmManager.set(AlarmManager.RTC, alarmTime, alarmPI)
         }
     }
 }

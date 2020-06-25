@@ -35,6 +35,10 @@
             android:name=".SnoozeUsageWarningBroadcaster"
             android:enabled="true"
             android:exported="true" />
+        <receiver
+            android:name=".UnlockServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>

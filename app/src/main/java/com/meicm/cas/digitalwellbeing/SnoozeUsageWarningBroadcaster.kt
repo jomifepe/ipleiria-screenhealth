@@ -12,27 +12,22 @@ import com.meicm.cas.digitalwellbeing.UsageWarningBroadcaster.Constant as Consta
 
 class SnoozeUsageWarningBroadcaster: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        intent?.let {
-            when (intent.action) {
-                Constant.ACTION_SNOOZE -> {
-                    val extras = intent.extras
-                    extras?.let {
-                        snoozeNotifications(context!!, extras.getInt(Constant.NOTIFICATION_ID))
-                    }
-                }
-                else -> Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] No notification action found")
+        if (intent == null) return
+        when (intent.action) {
+            Constant.ACTION_SNOOZE -> {
+                val id = intent.getIntExtra(Constant.NOTIFICATION_ID, -1)
+                if (id == -1) return
+                Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] Received notification id #$id")
+                snoozeNotifications(context!!, id)
             }
+            else -> Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] No notification action found")
         }
     }
 
     private fun snoozeNotifications(context: Context, notificationId: Int) {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-
-        AppPreferences.with(context).save(Const.PREFS_KEY_SNOOZE_LONG, System.currentTimeMillis())
-        Log.d(Const.LOG_TAG, "Registered snooze")
+        Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] Registered snooze")
+        AppPreferences.with(context).save(Const.PREF_KEY_SNOOZE_LONG, System.currentTimeMillis())
+        Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] Clearing notification #$notificationId")
         NotificationManagerCompat.from(context).cancel(notificationId)
     }
 }

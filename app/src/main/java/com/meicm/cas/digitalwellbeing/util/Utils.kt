@@ -1,8 +1,11 @@
 package com.meicm.cas.digitalwellbeing.util
 
+import android.app.ActivityManager
+import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -55,13 +58,30 @@ fun Calendar.setEndOfDay() {
     this.set(Calendar.MILLISECOND, 999)
 }
 
-fun getDateStringFromEpoch(timestamp: Long): String {
+private fun getDateStringFromEpoch(timestamp: Long, format: String): String {
     val cal = Calendar.getInstance()
     cal.timeInMillis = timestamp
     val sdf = SimpleDateFormat("YYYY-MMM-dd", Locale.getDefault())
     return sdf.format(cal.time)
 }
 
+fun getDateStringFromEpoch(timestamp: Long): String {
+    return getDateStringFromEpoch(timestamp, "YYYY-MMM-dd")
+}
+
+fun getDateTimeStringFromEpoch(timestamp: Long): String {
+    return getDateStringFromEpoch(timestamp, "YYYY-MMM-dd HH:mm:ss")
+}
+
 fun getInstalledPackages(context: Context): List<ApplicationInfo> {
     return context.packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+}
+
+fun isAppFirstRun(context: Context): Boolean {
+    return AppPreferences.with(context).getInt(Const.PREF_APP_RUN, 0) == 1
+}
+
+fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolean {
+    val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    return manager.getRunningServices(Integer.MAX_VALUE).any { it.service.className == serviceClass.name }
 }

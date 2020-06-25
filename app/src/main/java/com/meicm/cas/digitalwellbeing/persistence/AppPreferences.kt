@@ -29,13 +29,13 @@ class AppPreferences {
 
     @SuppressLint("CommitPrefEdits")
     constructor(context: Context, mode: Int) {
-        preferences = context.getSharedPreferences(Const.PREFS_NAME, mode)
+        preferences = context.getSharedPreferences(Const.PREF_NAME, mode)
         editor = preferences.edit()
     }
 
     @SuppressLint("CommitPrefEdits")
     constructor(context: Context) {
-        preferences = context.getSharedPreferences(Const.PREFS_NAME, Context.MODE_PRIVATE)
+        preferences = context.getSharedPreferences(Const.PREF_NAME, Context.MODE_PRIVATE)
         editor = preferences.edit()
     }
 
