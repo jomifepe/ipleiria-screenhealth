@@ -14,7 +14,7 @@ import compareTimestampsDateEqual
 import kotlinx.coroutines.*
 import java.util.*
 
-class ScreenInteractiveReceiver: BroadcastReceiver() {
+class ScreenInteractiveReceiver : BroadcastReceiver() {
     private lateinit var alarmManager: AlarmManager
     private var alarmPI: PendingIntent? = null
 
@@ -33,14 +33,15 @@ class ScreenInteractiveReceiver: BroadcastReceiver() {
                     AppDatabase
                         .getDatabase(context)
                         .unlockDao()
-                        .insert(Unlock(0, System.currentTimeMillis(),null))
+                        .insert(Unlock(0, State.unlockTime, null))
                 }
             }
 
             val pref = AppPreferences.with(context)
             if (pref.contains(Const.PREFS_KEY_SNOOZE_LONG)) {
                 val timestamp = pref.getLong(Const.PREFS_KEY_SNOOZE_LONG, 0L)
-                val snoozeIsToday = compareTimestampsDateEqual(timestamp, System.currentTimeMillis())
+                val snoozeIsToday =
+                    compareTimestampsDateEqual(timestamp, System.currentTimeMillis())
 
                 if (!snoozeIsToday) {
                     launchWarningRepeatingTimer(context, false)

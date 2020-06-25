@@ -43,7 +43,7 @@ import java.util.*
 
 private const val MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 3
 
-class UsageStatisticsFragment: Fragment() {
+class UsageStatisticsFragment : Fragment() {
     private lateinit var binding: FragmentUsageStatisticsBinding
     private lateinit var appTimeAdapter: AppTimeUsageRecyclerAdapter
     private lateinit var usageViewModel: UsageViewModel
@@ -64,12 +64,16 @@ class UsageStatisticsFragment: Fragment() {
         endTime = end.timeInMillis
     }
 
-    override fun onCreateView(inflater: LayoutInflater,
-                              container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
-        binding = DataBindingUtil.inflate(inflater,
-            R.layout.fragment_usage_statistics, container, false)
+        binding = DataBindingUtil.inflate(
+            inflater,
+            R.layout.fragment_usage_statistics, container, false
+        )
         setHasOptionsMenu(true)
 
         setupEventBusListeners()
@@ -111,7 +115,12 @@ class UsageStatisticsFragment: Fragment() {
                 this.endTime = event.endTimestamp
 
                 val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
-                Log.d(Const.LOG_TAG, "Change to the time range: [Start: ${sdf.format(this.startTime)}, End: ${sdf.format(this.endTime)}]")
+                Log.d(
+                    Const.LOG_TAG,
+                    "Change to the time range: [Start: ${sdf.format(this.startTime)}, End: ${sdf.format(
+                        this.endTime
+                    )}]"
+                )
 
                 updateUnlocksWithinRange()
                 updateAppSessionsWithinRange()
@@ -133,16 +142,19 @@ class UsageStatisticsFragment: Fragment() {
     }
 
     private fun setupList() {
-        appTimeAdapter = AppTimeUsageRecyclerAdapter(object: RecyclerViewItemShortClick {
+        appTimeAdapter = AppTimeUsageRecyclerAdapter(object : RecyclerViewItemShortClick {
             override fun onShortClick(view: View, position: Int) {
                 return
                 val stat: UsageStats = appUsageStatsList[position]
-                val category: AppCategory? = appCategories.find { it.appPackage == stat.packageName }
+                val category: AppCategory? =
+                    appCategories.find { it.appPackage == stat.packageName }
                 Toast.makeText(binding.root.context, category?.category, Toast.LENGTH_SHORT).show()
             }
         })
-        binding.rvAppTime.layoutManager = LinearLayoutManager(binding.root.context,
-            LinearLayoutManager.VERTICAL, false)
+        binding.rvAppTime.layoutManager = LinearLayoutManager(
+            binding.root.context,
+            LinearLayoutManager.VERTICAL, false
+        )
         binding.rvAppTime.adapter = appTimeAdapter
     }
 
@@ -192,7 +204,7 @@ class UsageStatisticsFragment: Fragment() {
         val hsm = getHoursMinutesSeconds(totalScreenTime)
         val totalTimeString = "${hsm.first} h ${hsm.second} min ${hsm.third} s"
 
-        requireActivity().runOnUiThread{
+        requireActivity().runOnUiThread {
             tv_total_screen_time.text = totalTimeString
             appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
         }
@@ -208,23 +220,28 @@ class UsageStatisticsFragment: Fragment() {
         }
 
         builder.setNegativeButton(android.R.string.cancel) { dialog, which ->
-            Toast.makeText(context,
-                "Sorry, but without usage access this app won't show anything", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                context,
+                "Sorry, but without usage access this app won't show anything", Toast.LENGTH_LONG
+            ).show()
         }
 
         builder.show()
     }
 
     private fun showPermissionAccessSettings() {
-        startActivityForResult(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
+        startActivityForResult(
+            Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS),
             MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS
         )
     }
 
     private fun hasUsagePermission(): Boolean {
         try {
-            val applicationInfo = requireContext().packageManager.getApplicationInfo(requireContext().packageName, 0)
-            val appOpsManager = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val applicationInfo =
+                requireContext().packageManager.getApplicationInfo(requireContext().packageName, 0)
+            val appOpsManager =
+                requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
             val mode = appOpsManager.checkOpNoThrow(
                 AppOpsManager.OPSTR_GET_USAGE_STATS,
                 applicationInfo.uid,
@@ -235,10 +252,6 @@ class UsageStatisticsFragment: Fragment() {
             return false
         }
     }
-
-
-
-
 
 
 //    private fun loadData() {

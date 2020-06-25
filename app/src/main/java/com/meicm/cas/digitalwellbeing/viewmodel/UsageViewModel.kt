@@ -10,7 +10,7 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class UsageViewModel(application: Application): AndroidViewModel(application) {
+class UsageViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: DataRepository
     val allUnlocks: LiveData<List<Unlock>>
     val appCategories: LiveData<List<AppCategory>>
@@ -35,7 +35,11 @@ class UsageViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun getAppSessions(startTime: Long, endTime: Long, callback: (HashMap<String, MutableList<AppSession>>) -> Unit) {
+    fun getAppSessions(
+        startTime: Long,
+        endTime: Long,
+        callback: (HashMap<String, MutableList<AppSession>>) -> Unit
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             val appSessions = repository.getAppSessions(startTime, endTime)
             callback(appSessions)

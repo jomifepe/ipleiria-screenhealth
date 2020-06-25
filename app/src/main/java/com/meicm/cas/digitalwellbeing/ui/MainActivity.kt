@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
+        val binding =
+            DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         val navController = findNavController(R.id.myNavHostFragment)
 
         NavigationUI.setupActionBarWithNavController(this, navController)
@@ -50,7 +51,8 @@ class MainActivity : AppCompatActivity() {
     private fun incrementOrDecrementTimeRange(days: Int) {
         startTime.add(Calendar.DAY_OF_YEAR, days)
         endTime.add(Calendar.DAY_OF_YEAR, days)
-        EventBus.getDefault().post(TimeRangeMessageEvent(startTime.timeInMillis, endTime.timeInMillis))
+        EventBus.getDefault()
+            .post(TimeRangeMessageEvent(startTime.timeInMillis, endTime.timeInMillis))
         updateTimeRangeLabel()
     }
 
@@ -61,7 +63,11 @@ class MainActivity : AppCompatActivity() {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name: String = "General"
-            val channel = NotificationChannel(Const.NOTIFICATION_CHANNEL_GENERAL, name, NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel(
+                Const.NOTIFICATION_CHANNEL_GENERAL,
+                name,
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
             channel.description = "General notifications"
             channel.setShowBadge(true)
 
@@ -75,6 +81,7 @@ class MainActivity : AppCompatActivity() {
         start.setStartOfDay()
         return start
     }
+
     private fun getEndOfDayCalendar(): Calendar {
         val end = Calendar.getInstance()
         end.setEndOfDay()

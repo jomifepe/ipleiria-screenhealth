@@ -12,6 +12,7 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
 import com.meicm.cas.digitalwellbeing.util.Const
+import compareTimestampsDateEqual
 import java.lang.Exception
 
 class DataRepository(
@@ -40,8 +41,14 @@ class DataRepository(
         }
     }
 
-    suspend fun getAppSessions(startTime: Long, endTime: Long): HashMap<String, MutableList<AppSession>> {
-        val sessions = appSessionDao.getSessionByRange(startTime, endTime)
+    fun getAppSessions(
+        startTime: Long,
+        endTime: Long
+    ): HashMap<String, MutableList<AppSession>> {
+        var sessions = appSessionDao.getSessionByRange(startTime, endTime)
+        if (!compareTimestampsDateEqual(startTime, System.currentTimeMillis())) {
+            sessions = sessions.filter { it.endTimestamp != null }
+        }
 
         val packageSessions = HashMap<String, MutableList<AppSession>>()
 
@@ -59,19 +66,23 @@ class DataRepository(
         return packageSessions
     }
 
-    suspend fun getUnlocks(startTime: Long, endTime: Long): List<Unlock> {
-        return unlocksDao.getUnlocks(startTime, endTime)
+    fun getUnlocks(startTime: Long, endTime: Long): List<Unlock> {
+        val unlocks = unlocksDao.getUnlocks(startTime, endTime)
+        if (!compareTimestampsDateEqual(startTime, System.currentTimeMillis())) {
+            return unlocks.filter { it.endTimestamp != null }
+        }
+        return unlocks
     }
 
-    suspend fun insertUnlock(unlock: Unlock) {
+    fun insertUnlock(unlock: Unlock) {
         unlocksDao.insert(unlock)
     }
 
-    suspend fun insertUnlocks(unlocks: List<Unlock>) {
+    fun insertUnlocks(unlocks: List<Unlock>) {
         unlocksDao.insertAll(unlocks)
     }
 
-    suspend fun insertUnlockIfEmpty(unlocks: List<Unlock>) {
+    fun insertUnlockIfEmpty(unlocks: List<Unlock>) {
         if (unlocksDao.getLastUnlock() != null) return
         unlocksDao.insertAll(unlocks)
     }
