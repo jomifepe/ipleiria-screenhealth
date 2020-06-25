@@ -28,15 +28,15 @@
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".receiver.UsageWarningReceiver"
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".receiver.SnoozeUsageWarningReceiver"
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.SnoozeUsageWarningReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name=".receiver.UnlockServiceRestartReceiver"
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver"
             android:enabled="true"
             android:exported="true" />
     </application>

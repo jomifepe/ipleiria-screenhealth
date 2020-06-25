@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing.receiver
+package com.meicm.cas.digitalwellbeing.communication.receiver
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,7 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.meicm.cas.digitalwellbeing.State
+import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
@@ -33,7 +33,7 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
     private fun performLockActions(context: Context) {
         Log.d(Const.LOG_TAG, "Locked")
 
-        State.isUnlocked = false
+        AppState.isUnlocked = false
 
         CoroutineScope(Dispatchers.IO).launch {
             AppDatabase
@@ -56,15 +56,19 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
     private fun performUnlockActions(context: Context) {
         Log.d(Const.LOG_TAG, "Unlocked")
 
-        State.isUnlocked = true
-        State.unlockTime = System.currentTimeMillis()
+        AppState.isUnlocked = true
+        AppState.unlockTime = System.currentTimeMillis()
 
         CoroutineScope(Dispatchers.IO).launch {
             AppDatabase
                 .getDatabase(context)
                 .unlockDao()
-                .insert(Unlock(0,
-                    State.unlockTime, null))
+                .insert(
+                    Unlock(
+                        0,
+                        AppState.unlockTime, null
+                    )
+                )
             Log.d(Const.LOG_TAG, "Inserted unlock into the database")
         }
 
@@ -98,10 +102,18 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
         val defaultDuration = 5000L
         val alarmTime = System.currentTimeMillis() +
                 AppPreferences.with(context).getLong(Const.PREF_UW_LAST_TIME, defaultDuration)
-        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateStringFromEpoch(alarmTime)} s")
+        Log.d(
+            Const.LOG_TAG,
+            "Starting usage notification timer, triggering at: ${getDateStringFromEpoch(alarmTime)} s"
+        )
 
         if (repeating) {
-            alarmManager.setRepeating(AlarmManager.RTC, /* first trigger */ alarmTime, /* repeat */ 60000, alarmPI)
+            alarmManager.setRepeating(
+                AlarmManager.RTC, /* first trigger */
+                alarmTime, /* repeat */
+                60000,
+                alarmPI
+            )
         } else {
             alarmManager.set(AlarmManager.RTC, alarmTime, alarmPI)
         }

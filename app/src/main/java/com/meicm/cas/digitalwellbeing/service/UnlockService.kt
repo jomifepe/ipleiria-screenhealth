@@ -8,8 +8,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
-import com.meicm.cas.digitalwellbeing.receiver.ScreenInteractiveReceiver
-import com.meicm.cas.digitalwellbeing.State
+import com.meicm.cas.digitalwellbeing.communication.receiver.ScreenInteractiveReceiver
+import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 
@@ -58,8 +58,8 @@ class UnlockService: Service() {
     }
 
     private fun saveCurrentUsageWarningTimer() {
-        if (State.unlockTime == null) return
-        val elapsedTime = System.currentTimeMillis() - State.unlockTime!!
+        if (AppState.unlockTime == null) return
+        val elapsedTime = System.currentTimeMillis() - AppState.unlockTime!!
         AppPreferences
             .with(this)
             .save(Const.PREF_UW_LAST_TIME, elapsedTime)
