@@ -1,5 +1,7 @@
 package com.meicm.cas.digitalwellbeing.communication.receiver
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -29,10 +31,11 @@ class NotificationSnoozeButtonReceiver : BroadcastReceiver() {
     private fun snoozeNotifications(context: Context, notificationId: Int) {
         Log.d(Const.LOG_TAG, "[SnoozeUsageWarningBroadcaster] Registered snooze")
         AppPreferences.with(context).save(Const.PREF_KEY_SNOOZE_LONG, System.currentTimeMillis())
-        Log.d(
-            Const.LOG_TAG,
-            "[SnoozeUsageWarningBroadcaster] Clearing notification #$notificationId"
-        )
         NotificationManagerCompat.from(context).cancel(notificationId)
+
+        // try to cancel existing alarms (scheduled usage warning notifications)
+        val pi = PendingIntent.getBroadcast(context, 0,
+            Intent(context, UsageWarningNotificationReceiver::class.java), 0)
+        (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(pi)
     }
 }

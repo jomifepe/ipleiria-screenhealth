@@ -127,14 +127,9 @@ class LockUnlockReceiver : BroadcastReceiver() {
                 "triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)} ($alarmTimestamp)" +
                 " - $hsm from now")
 
-        AppState.lastUWTimerStart = currentTimestamp
+        if (AppState.lastUWTimerStart == null) AppState.lastUWTimerStart = currentTimestamp
         if (repeating) {
-            alarmManager.setRepeating(
-                AlarmManager.RTC, /* first */
-                alarmTimestamp, /* repeat */
-                Const.UW_TIME_TO_TRIGGER,
-                alarmPI
-            )
+            alarmManager.setRepeating(AlarmManager.RTC, alarmTimestamp, Const.UW_TIME_TO_TRIGGER, alarmPI)
             return
         }
         alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)
