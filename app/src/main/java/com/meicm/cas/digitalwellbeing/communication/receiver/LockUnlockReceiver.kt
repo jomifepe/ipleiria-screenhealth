@@ -41,7 +41,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
             Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Closing last unlock")
         }
 
-        saveCurrentUsageWarningTimer(context)
+        saveCurrentUsageWarningTimer(context, lockTime)
         saveLockTime(context, lockTime)
 
         // TODO: Fix no alarm clear when the app is killed
@@ -80,9 +80,10 @@ class LockUnlockReceiver : BroadcastReceiver() {
      * Saves the current elapsed time of the usage warning notification trigger timer
      * (time since unlock or since the last usage warning notification)
      */
-    private fun saveCurrentUsageWarningTimer(context: Context) {
+    private fun saveCurrentUsageWarningTimer(context: Context, lockTime: Long) {
         if (AppState.lastUWTimerStart == null) return
-        val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
+        var elapsedTime = lockTime - AppState.lastUWTimerStart!!
+        if (elapsedTime > Const.UW_TIME_TO_TRIGGER) elapsedTime = 0L
         AppPreferences.with(context).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
 //        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
@@ -107,23 +108,18 @@ class LockUnlockReceiver : BroadcastReceiver() {
         val alarmIntent = Intent(context, UsageWarningNotificationReceiver::class.java)
         alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
 
-        val cal = Calendar.getInstance()
-        cal.add(Calendar.SECOND, 5)
-
-//        val timeToTrigger = 30 * 6000L
-        val timeToTrigger = 60000L
-
         val currentTimestamp = System.currentTimeMillis()
-        val savedLastTimerElapsed = AppPreferences.with(context).getLong(Const.PREF_LAST_UW_TIMER_ELAPSED, 0)
+        val savedLastTimerElapsed =
+            AppPreferences.with(context).getLong(Const.PREF_LAST_UW_TIMER_ELAPSED, 0)
         val lastLockTimestamp = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
 
+        /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
+           this is used to prevent quick lock & unlocks from resetting the timer */
         val alarmTimestamp =
-            /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
-               this is used to prevent quick lock & unlocks from resetting the timer */
-            if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
-                currentTimestamp + (timeToTrigger - savedLastTimerElapsed)
+            currentTimestamp + if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
+                Const.UW_TIME_TO_TRIGGER - savedLastTimerElapsed
             } else {
-                currentTimestamp + timeToTrigger
+                Const.UW_TIME_TO_TRIGGER
             }
 
         val hsm = getHoursMinutesSecondsString(alarmTimestamp - currentTimestamp)
@@ -133,9 +129,14 @@ class LockUnlockReceiver : BroadcastReceiver() {
 
         AppState.lastUWTimerStart = currentTimestamp
         if (repeating) {
-            alarmManager.setRepeating(AlarmManager.RTC, /* first */ alarmTimestamp, /* repeat */ timeToTrigger, alarmPI)
-        } else {
-            alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)
+            alarmManager.setRepeating(
+                AlarmManager.RTC, /* first */
+                alarmTimestamp, /* repeat */
+                Const.UW_TIME_TO_TRIGGER,
+                alarmPI
+            )
+            return
         }
+        alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)
     }
 }
