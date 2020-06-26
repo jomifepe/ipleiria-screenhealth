@@ -43,13 +43,18 @@ class UsageWarningReceiver : BroadcastReceiver() {
         val notificationManager = NotificationManagerCompat.from(context)
 
         val pref = AppPreferences.with(context)
-        // try to clear last uw notification
         notificationManager.cancel(pref.getInt(Const.PREF_UW_LAST_NOTIFICATION_ID, -1))
 
         Log.d(Const.LOG_TAG, "Sending usage warning notification #$currentNotificationId")
-        notificationManager.notify(currentNotificationId!!, builder.build())
+        if (shouldNotify()) notificationManager.notify(currentNotificationId!!, builder.build())
+        AppState.lastUWTimerStart = System.currentTimeMillis()
 
         pref.save(Const.PREF_UW_LAST_NOTIFICATION_ID, currentNotificationId!!)
         pref.remove(Const.PREF_UW_LAST_TIME)
+    }
+
+    private fun shouldNotify(): Boolean {
+        // TODO: Analyze used apps
+        return true
     }
 }

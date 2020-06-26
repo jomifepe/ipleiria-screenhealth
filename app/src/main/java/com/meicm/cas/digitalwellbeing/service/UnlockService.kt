@@ -8,8 +8,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import com.meicm.cas.digitalwellbeing.communication.receiver.ScreenInteractiveReceiver
 import com.meicm.cas.digitalwellbeing.AppState
+import com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 
@@ -28,6 +30,7 @@ class UnlockService: Service() {
 
 //        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
         Log.d(Const.LOG_TAG, "Registered broadcast receiver")
+        Toast.makeText(this, "UnlockService onCreate", Toast.LENGTH_SHORT).show()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -38,17 +41,11 @@ class UnlockService: Service() {
         return START_STICKY
     }
 
-//    override fun onTaskRemoved(rootIntent: Intent?) {
-//        val restartServiceIntent = Intent(applicationContext, this.javaClass)
-//        restartServiceIntent.setPackage(packageName)
-//        startService(restartServiceIntent)
-//        Log.d(Const.LOG_TAG, "onTaskRemoved")
-//    }
-
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         Log.d(Const.LOG_TAG, "onTaskRemoved")
-        sendBroadcast(Intent(Const.ACTION_UNLOCK_SERVICE_RESTART))
+        saveCurrentUsageWarningTimer()
+        sendBroadcast(Intent(this, UnlockServiceRestartReceiver::class.java))
     }
 
     override fun onDestroy() {
@@ -58,11 +55,9 @@ class UnlockService: Service() {
     }
 
     private fun saveCurrentUsageWarningTimer() {
-        if (AppState.unlockTime == null) return
-        val elapsedTime = System.currentTimeMillis() - AppState.unlockTime!!
-        AppPreferences
-            .with(this)
-            .save(Const.PREF_UW_LAST_TIME, elapsedTime)
+        if (AppState.lastUWTimerStart == null) return
+        val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
+        AppPreferences.with(this).save(Const.PREF_UW_LAST_TIME, elapsedTime)
         Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 

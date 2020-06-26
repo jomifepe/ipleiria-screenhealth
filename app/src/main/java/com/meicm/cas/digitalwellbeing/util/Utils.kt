@@ -61,8 +61,7 @@ fun Calendar.setEndOfDay() {
 private fun getDateStringFromEpoch(timestamp: Long, format: String): String {
     val cal = Calendar.getInstance()
     cal.timeInMillis = timestamp
-    val sdf = SimpleDateFormat("YYYY-MMM-dd", Locale.getDefault())
-    return sdf.format(cal.time)
+    return SimpleDateFormat(format, Locale.getDefault()).format(cal.time)
 }
 
 fun getDateStringFromEpoch(timestamp: Long): String {

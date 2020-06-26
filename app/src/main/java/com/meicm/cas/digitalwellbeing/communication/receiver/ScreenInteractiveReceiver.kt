@@ -12,7 +12,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.compareTimestampsDateEqual
-import com.meicm.cas.digitalwellbeing.util.getDateStringFromEpoch
+import com.meicm.cas.digitalwellbeing.util.getDateTimeStringFromEpoch
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -32,16 +32,19 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
 
     private fun performLockActions(context: Context) {
         Log.d(Const.LOG_TAG, "Locked")
-
+        val lockTime = System.currentTimeMillis()
         AppState.isUnlocked = false
 
         CoroutineScope(Dispatchers.IO).launch {
             AppDatabase
                 .getDatabase(context)
                 .unlockDao()
-                .updateLastUnlockEndTimestamp(System.currentTimeMillis())
+                .updateLastUnlockEndTimestamp(lockTime)
             Log.d(Const.LOG_TAG, "Closing last unlock")
         }
+
+        saveCurrentUsageWarningTimer(context)
+        saveLockTime(context, lockTime)
 
         // TODO: Fix no alarm clear when the app is killed
         // Cancel existing alarm
@@ -51,6 +54,11 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
         } else {
             Log.d(Const.LOG_TAG, "No alarms to cancel")
         }
+    }
+
+    private fun saveLockTime(context: Context, lockTime: Long) {
+        AppPreferences.with(context).save(Const.PREF_LOCK_TIME, lockTime)
+        Log.d(Const.LOG_TAG, "Saved lock time to preferences")
     }
 
     private fun performUnlockActions(context: Context) {
@@ -63,16 +71,18 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
             AppDatabase
                 .getDatabase(context)
                 .unlockDao()
-                .insert(
-                    Unlock(
-                        0,
-                        AppState.unlockTime, null
-                    )
-                )
+                .insert(Unlock(0, AppState.unlockTime, null))
             Log.d(Const.LOG_TAG, "Inserted unlock into the database")
         }
 
         tryLaunchUsageWarningTimer(context)
+    }
+
+    private fun saveCurrentUsageWarningTimer(context: Context) {
+        if (AppState.lastUWTimerStart == null) return
+        val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
+        AppPreferences.with(context).save(Const.PREF_UW_LAST_TIME, elapsedTime)
+        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 
     private fun tryLaunchUsageWarningTimer(context: Context) {
@@ -100,20 +110,22 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
 
 //        val defaultTime = 30 * 6000L
         val defaultDuration = 5000L
-        val alarmTime = System.currentTimeMillis() +
-                AppPreferences.with(context).getLong(Const.PREF_UW_LAST_TIME, defaultDuration)
-        Log.d(
-            Const.LOG_TAG,
-            "Starting usage notification timer, triggering at: ${getDateStringFromEpoch(alarmTime)} s"
-        )
+        val repeatingTime = 60000L
 
+        val currentTime = System.currentTimeMillis()
+        val savedTime = AppPreferences.with(context).getLong(Const.PREF_UW_LAST_TIME, 0)
+        val lastLockTime = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
+
+        if (savedTime != 0L && (currentTime - lastLockTime) <= Const.UW_UNLOCK_THRESHOLD_MS) {
+            // TODO
+        }
+
+        val alarmTime = currentTime + (if (savedTime != 0L) repeatingTime - savedTime else defaultDuration)
+        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateTimeStringFromEpoch(alarmTime)} s")
+
+        AppState.lastUWTimerStart = currentTime
         if (repeating) {
-            alarmManager.setRepeating(
-                AlarmManager.RTC, /* first trigger */
-                alarmTime, /* repeat */
-                60000,
-                alarmPI
-            )
+            alarmManager.setRepeating(AlarmManager.RTC, /* first */ alarmTime, /* repeat */ repeatingTime, alarmPI)
         } else {
             alarmManager.set(AlarmManager.RTC, alarmTime, alarmPI)
         }
