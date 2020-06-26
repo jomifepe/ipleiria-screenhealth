@@ -42,6 +42,7 @@ class DataRepository(
         startTime: Long,
         endTime: Long
     ): HashMap<String, MutableList<AppSession>> {
+
         var sessions = appSessionDao.getSessionByRange(startTime, endTime)
         if (!compareTimestampsDateEqual(startTime, System.currentTimeMillis())) {
             sessions = sessions.filter { it.endTimestamp != null }

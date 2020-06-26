@@ -14,7 +14,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.NotificationId
 
-class UsageWarningReceiver : BroadcastReceiver() {
+class UsageWarningNotificationReceiver : BroadcastReceiver() {
     object Constant {
         const val ACTION_EXTRAS: String = "usage_warning.extras"
         const val ACTION_SNOOZE: String = "android.intent.action.ACTION_SNOOZE"
@@ -24,7 +24,7 @@ class UsageWarningReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         currentNotificationId = NotificationId.getNewId()
         Log.d(Const.LOG_TAG, "Generating notification id $currentNotificationId")
-        val snoozeIntent: Intent = Intent(context, SnoozeUsageWarningReceiver::class.java).apply {
+        val snoozeIntent: Intent = Intent(context, NotificationSnoozeButtonReceiver::class.java).apply {
             action = Constant.ACTION_SNOOZE
         }
         val snoozePI: PendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, 0)

@@ -36,9 +36,7 @@ class UsageViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getAppSessions(
-        startTime: Long,
-        endTime: Long,
-        callback: (HashMap<String, MutableList<AppSession>>) -> Unit
+        startTime: Long, endTime: Long, callback: (HashMap<String, MutableList<AppSession>>) -> Unit
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val appSessions = repository.getAppSessions(startTime, endTime)

@@ -28,11 +28,11 @@
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningReceiver"
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.SnoozeUsageWarningReceiver"
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.NotificationSnoozeButtonReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver

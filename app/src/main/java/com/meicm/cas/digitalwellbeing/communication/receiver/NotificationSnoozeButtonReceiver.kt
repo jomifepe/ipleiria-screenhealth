@@ -5,13 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.AppState.currentNotificationId
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningReceiver.Constant as Constant
+import com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver.Constant as Constant
 
-class SnoozeUsageWarningReceiver : BroadcastReceiver() {
+class NotificationSnoozeButtonReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) return
         when (intent.action) {

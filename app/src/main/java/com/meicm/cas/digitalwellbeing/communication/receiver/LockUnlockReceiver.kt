@@ -16,7 +16,7 @@ import com.meicm.cas.digitalwellbeing.util.getDateTimeStringFromEpoch
 import kotlinx.coroutines.*
 import java.util.*
 
-class ScreenInteractiveReceiver : BroadcastReceiver() {
+class LockUnlockReceiver : BroadcastReceiver() {
     private lateinit var alarmManager: AlarmManager
     private var alarmPI: PendingIntent? = null
 
@@ -102,7 +102,7 @@ class ScreenInteractiveReceiver : BroadcastReceiver() {
     }
 
     private fun launchWarningRepeatingTimer(context: Context, repeating: Boolean) {
-        val alarmIntent = Intent(context, UsageWarningReceiver::class.java)
+        val alarmIntent = Intent(context, UsageWarningNotificationReceiver::class.java)
         alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
 
         val cal = Calendar.getInstance()

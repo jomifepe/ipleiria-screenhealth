@@ -9,7 +9,7 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
-import com.meicm.cas.digitalwellbeing.communication.receiver.ScreenInteractiveReceiver
+import com.meicm.cas.digitalwellbeing.communication.receiver.LockUnlockReceiver
 import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
@@ -26,7 +26,7 @@ class UnlockService: Service() {
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
             filter.addAction(Intent.ACTION_SCREEN_OFF)
             filter.addAction(Intent.ACTION_SCREEN_ON)
-        registerReceiver(ScreenInteractiveReceiver(), filter)
+        registerReceiver(LockUnlockReceiver(), filter)
 
 //        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
         Log.d(Const.LOG_TAG, "Registered broadcast receiver")
@@ -64,7 +64,7 @@ class UnlockService: Service() {
     private fun tryToDestroyReceiver() {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val updateServiceIntent = Intent(this, ScreenInteractiveReceiver::class.java)
+        val updateServiceIntent = Intent(this, LockUnlockReceiver::class.java)
         val pendingUpdateIntent = PendingIntent.getService(this, 0, updateServiceIntent, 0)
 
         try {
