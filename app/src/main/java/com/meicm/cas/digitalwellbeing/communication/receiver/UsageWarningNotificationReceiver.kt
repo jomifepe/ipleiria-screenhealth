@@ -50,7 +50,7 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
         AppState.lastUWTimerStart = System.currentTimeMillis()
 
         pref.save(Const.PREF_UW_LAST_NOTIFICATION_ID, currentNotificationId!!)
-        pref.remove(Const.PREF_LAST_UW_TIMER_ELAPSED)
+        pref.remove(Const.PREF_LAST_UW_TIMER_ELAPSED) // idk why but it doesn't break anything
     }
 
     private fun shouldNotify(): Boolean {

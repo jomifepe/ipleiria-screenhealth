@@ -10,9 +10,7 @@ import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
-import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.compareTimestampsDateEqual
-import com.meicm.cas.digitalwellbeing.util.getDateTimeStringFromEpoch
+import com.meicm.cas.digitalwellbeing.util.*
 import kotlinx.coroutines.*
 import java.util.*
 
@@ -40,7 +38,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
                 .getDatabase(context)
                 .unlockDao()
                 .updateLastUnlockEndTimestamp(lockTime)
-            Log.d(Const.LOG_TAG, "Closing last unlock")
+            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Closing last unlock")
         }
 
         saveCurrentUsageWarningTimer(context)
@@ -49,20 +47,20 @@ class LockUnlockReceiver : BroadcastReceiver() {
         // TODO: Fix no alarm clear when the app is killed
         // Cancel existing alarm
         if (alarmPI != null) {
-            Log.d(Const.LOG_TAG, "Cancelling existing alarm")
+            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Cancelling existing alarm")
             alarmManager.cancel(alarmPI)
         } else {
-            Log.d(Const.LOG_TAG, "No alarms to cancel")
+            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] No alarms to cancel")
         }
     }
 
     private fun saveLockTime(context: Context, lockTime: Long) {
         AppPreferences.with(context).save(Const.PREF_LOCK_TIME, lockTime)
-        Log.d(Const.LOG_TAG, "Saved lock time to preferences")
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Saved lock time to preferences")
     }
 
     private fun performUnlockActions(context: Context) {
-        Log.d(Const.LOG_TAG, "Unlocked")
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Unlocked")
 
         AppState.isUnlocked = true
         AppState.unlockTime = System.currentTimeMillis()
@@ -72,7 +70,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
                 .getDatabase(context)
                 .unlockDao()
                 .insert(Unlock(0, AppState.unlockTime, null))
-            Log.d(Const.LOG_TAG, "Inserted unlock into the database")
+            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Inserted unlock into the database")
         }
 
         tryLaunchUsageWarningTimer(context)
@@ -86,7 +84,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
         if (AppState.lastUWTimerStart == null) return
         val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
         AppPreferences.with(context).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
-        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
+//        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 
     private fun tryLaunchUsageWarningTimer(context: Context) {
@@ -98,7 +96,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
             if (!snoozeIsToday) {
                 launchWarningRepeatingTimer(context, true)
             } else {
-                Log.d(Const.LOG_TAG, "Snooze detected, no usage warning timer started")
+                Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Snooze detected, no usage warning timer started")
             }
         } else {
             launchWarningRepeatingTimer(context, true)
@@ -113,26 +111,25 @@ class LockUnlockReceiver : BroadcastReceiver() {
         cal.add(Calendar.SECOND, 5)
 
 //        val timeToTrigger = 30 * 6000L
-//        val timeToTrigger = 60000L
-        val timeToTrigger = 5000L
+        val timeToTrigger = 60000L
 
         val currentTimestamp = System.currentTimeMillis()
         val savedLastTimerElapsed = AppPreferences.with(context).getLong(Const.PREF_LAST_UW_TIMER_ELAPSED, 0)
         val lastLockTimestamp = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
 
-        var alarmTimestamp = 0L
-        /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
-           this is used to prevent quick lock & unlocks from resetting the timer */
-        if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
-            alarmTimestamp = currentTimestamp + (timeToTrigger - savedLastTimerElapsed)
-            Log.d(Const.LOG_TAG, "Using savedLastTimerElapsed for timer: ${timeToTrigger - savedLastTimerElapsed}s")
-        } else {
-            alarmTimestamp = currentTimestamp + timeToTrigger
-            Log.d(Const.LOG_TAG, "Using default time for timer: $timeToTrigger")
-        }
+        val alarmTimestamp =
+            /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
+               this is used to prevent quick lock & unlocks from resetting the timer */
+            if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
+                currentTimestamp + (timeToTrigger - savedLastTimerElapsed)
+            } else {
+                currentTimestamp + timeToTrigger
+            }
 
-//        val alarmTime = currentTimestamp + (if (savedLastTimerElapsed != 0L) repeatingTime - savedLastTimerElapsed else defaultDuration)
-        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)}")
+        val hsm = getHoursMinutesSecondsString(alarmTimestamp - currentTimestamp)
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Starting usage notification timer, " +
+                "triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)} ($alarmTimestamp)" +
+                " - $hsm from now")
 
         AppState.lastUWTimerStart = currentTimestamp
         if (repeating) {

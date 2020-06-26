@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
+import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,6 +34,18 @@ fun getHoursMinutesSeconds(timeInMillis: Long): Triple<Long, Long, Long> {
     val hours: Long = (timeInMillis / (1000 * 60 * 60))
 
     return Triple(hours, minutes, seconds)
+}
+
+fun getHoursMinutesSecondsString(timeInMillis: Long): String {
+    val seconds: Long = (timeInMillis / 1000) % 60
+    val minutes: Long = (timeInMillis / (1000 * 60)) % 60
+    val hours: Long = (timeInMillis / (1000 * 60 * 60))
+
+    val str = StringBuilder()
+    if (hours > 0) str.append("$hours h")
+    if (minutes > 0) str.append(" $minutes min")
+    if (seconds > 0) str.append(" $seconds s")
+    return str.toString()
 }
 
 fun getAppName(context: Context, packageName: String): String {

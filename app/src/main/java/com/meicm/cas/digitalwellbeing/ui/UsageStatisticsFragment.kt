@@ -102,16 +102,6 @@ class UsageStatisticsFragment : Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        Log.d(Const.LOG_TAG, "Paused")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(Const.LOG_TAG, "Resumed")
-    }
-
     private fun setupEventBusListeners() {
         EventBus.getDefault().register(this)
     }
