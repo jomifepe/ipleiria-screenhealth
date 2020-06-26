@@ -11,7 +11,7 @@ object Const {
     const val PREF_NAME = "DW_Preferences"
     const val PREF_APP_RUN = "$BASE_PACKAGE.preference.app_run"
     const val PREF_KEY_SNOOZE_LONG = "$BASE_PACKAGE.preference.uw_snooze"
-    const val PREF_UW_LAST_TIME = "$BASE_PACKAGE.preference.uw_last_time"
+    const val PREF_LAST_UW_TIMER_ELAPSED = "$BASE_PACKAGE.preference.uw_last_time"
     const val PREF_UW_LAST_NOTIFICATION_ID = "$BASE_PACKAGE.preference.last_notification_id"
     const val PREF_LOCK_TIME = "$BASE_PACKAGE.preference.lock_time"
 

@@ -78,10 +78,14 @@ class LockUnlockReceiver : BroadcastReceiver() {
         tryLaunchUsageWarningTimer(context)
     }
 
+    /**
+     * Saves the current elapsed time of the usage warning notification trigger timer
+     * (time since unlock or since the last usage warning notification)
+     */
     private fun saveCurrentUsageWarningTimer(context: Context) {
         if (AppState.lastUWTimerStart == null) return
         val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
-        AppPreferences.with(context).save(Const.PREF_UW_LAST_TIME, elapsedTime)
+        AppPreferences.with(context).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
         Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 
@@ -108,26 +112,33 @@ class LockUnlockReceiver : BroadcastReceiver() {
         val cal = Calendar.getInstance()
         cal.add(Calendar.SECOND, 5)
 
-//        val defaultTime = 30 * 6000L
-        val defaultDuration = 5000L
-        val repeatingTime = 60000L
+//        val timeToTrigger = 30 * 6000L
+//        val timeToTrigger = 60000L
+        val timeToTrigger = 5000L
 
-        val currentTime = System.currentTimeMillis()
-        val savedTime = AppPreferences.with(context).getLong(Const.PREF_UW_LAST_TIME, 0)
-        val lastLockTime = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
+        val currentTimestamp = System.currentTimeMillis()
+        val savedLastTimerElapsed = AppPreferences.with(context).getLong(Const.PREF_LAST_UW_TIMER_ELAPSED, 0)
+        val lastLockTimestamp = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
 
-        if (savedTime != 0L && (currentTime - lastLockTime) <= Const.UW_UNLOCK_THRESHOLD_MS) {
-            // TODO
+        var alarmTimestamp = 0L
+        /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
+           this is used to prevent quick lock & unlocks from resetting the timer */
+        if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
+            alarmTimestamp = currentTimestamp + (timeToTrigger - savedLastTimerElapsed)
+            Log.d(Const.LOG_TAG, "Using savedLastTimerElapsed for timer: ${timeToTrigger - savedLastTimerElapsed}s")
+        } else {
+            alarmTimestamp = currentTimestamp + timeToTrigger
+            Log.d(Const.LOG_TAG, "Using default time for timer: $timeToTrigger")
         }
 
-        val alarmTime = currentTime + (if (savedTime != 0L) repeatingTime - savedTime else defaultDuration)
-        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateTimeStringFromEpoch(alarmTime)} s")
+//        val alarmTime = currentTimestamp + (if (savedLastTimerElapsed != 0L) repeatingTime - savedLastTimerElapsed else defaultDuration)
+        Log.d(Const.LOG_TAG, "Starting usage notification timer, triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)}")
 
-        AppState.lastUWTimerStart = currentTime
+        AppState.lastUWTimerStart = currentTimestamp
         if (repeating) {
-            alarmManager.setRepeating(AlarmManager.RTC, /* first */ alarmTime, /* repeat */ repeatingTime, alarmPI)
+            alarmManager.setRepeating(AlarmManager.RTC, /* first */ alarmTimestamp, /* repeat */ timeToTrigger, alarmPI)
         } else {
-            alarmManager.set(AlarmManager.RTC, alarmTime, alarmPI)
+            alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)
         }
     }
 }

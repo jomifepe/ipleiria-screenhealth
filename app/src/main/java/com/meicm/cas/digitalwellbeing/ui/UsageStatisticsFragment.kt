@@ -175,13 +175,12 @@ class UsageStatisticsFragment : Fragment() {
 
     private fun updateUnlocksWithinRange() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
-//            if (result.size > unlockCount) {
+            if (result.size > unlockCount) {
                 unlockCount = result.size
                 requireActivity().runOnUiThread {
-                    Log.d(Const.LOG_TAG, "updateUnlocksWithinRange $unlockCount")
                     tv_total_unlocks.text = unlockCount.toString()
                 }
-//            }
+            }
         }
     }
 

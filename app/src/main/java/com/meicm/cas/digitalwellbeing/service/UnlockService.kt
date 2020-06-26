@@ -29,8 +29,7 @@ class UnlockService: Service() {
         registerReceiver(LockUnlockReceiver(), filter)
 
 //        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
-        Log.d(Const.LOG_TAG, "Registered broadcast receiver")
-        Toast.makeText(this, "UnlockService onCreate", Toast.LENGTH_SHORT).show()
+        Log.d(Const.LOG_TAG, "[UnlockService] Registered broadcast receiver")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -43,22 +42,22 @@ class UnlockService: Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        Log.d(Const.LOG_TAG, "onTaskRemoved")
+        Log.d(Const.LOG_TAG, "[UnlockService] onTaskRemoved")
         saveCurrentUsageWarningTimer()
         sendBroadcast(Intent(this, UnlockServiceRestartReceiver::class.java))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(Const.LOG_TAG, "Unlock Service destroyed")
+        Log.d(Const.LOG_TAG, "[UnlockService] Unlock Service destroyed")
         tryToDestroyReceiver()
     }
 
     private fun saveCurrentUsageWarningTimer() {
         if (AppState.lastUWTimerStart == null) return
         val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
-        AppPreferences.with(this).save(Const.PREF_UW_LAST_TIME, elapsedTime)
-        Log.d(Const.LOG_TAG, "Saving current usage warning time: ${elapsedTime / 1000.0} s")
+        AppPreferences.with(this).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
+        Log.d(Const.LOG_TAG, "[UnlockService] Saving current usage warning time: ${elapsedTime / 1000.0} s")
     }
 
     private fun tryToDestroyReceiver() {
@@ -70,7 +69,7 @@ class UnlockService: Service() {
         try {
             alarmManager.cancel(pendingUpdateIntent)
         } catch (e: Exception) {
-            Log.e(Const.LOG_TAG, "AlarmManager update was not canceled. $e")
+            Log.e(Const.LOG_TAG, "[UnlockService] AlarmManager update was not canceled. $e")
         }
     }
 
