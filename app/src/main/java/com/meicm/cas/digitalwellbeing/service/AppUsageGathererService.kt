@@ -14,11 +14,8 @@ import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayCategory
 import com.meicm.cas.digitalwellbeing.remote.GooglePlayService
-import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.getAppName
-import com.meicm.cas.digitalwellbeing.util.getInstalledPackages
+import com.meicm.cas.digitalwellbeing.util.*
 import kotlinx.coroutines.*
-import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import java.util.*
 
 
@@ -100,8 +97,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         val newAppCategories: MutableList<AppCategory> = mutableListOf()
         val updatedAppCategories: MutableList<AppCategory> = mutableListOf()
         for (pkg in installedPackages) {
-            if (/* is system app */ pkg.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
-
+            if (/* is system app */ isSystemApp(pkg)) continue
             try {
                 val appCategory = getAppCategory(pkg.packageName)
 

@@ -5,7 +5,13 @@ import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.util.Log
+import com.google.android.gms.location.ActivityTransition
+import com.google.android.gms.location.DetectedActivity
+import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppSessionWithCategory
+import com.meicm.cas.digitalwellbeing.util.Const.UW_ALLOWED_CATEGORIES
 import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -95,5 +101,90 @@ fun isAppFirstRun(context: Context): Boolean {
 
 fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    return manager.getRunningServices(Integer.MAX_VALUE).any { it.service.className == serviceClass.name }
+    return manager.getRunningServices(Integer.MAX_VALUE)
+        .any { it.service.className == serviceClass.name }
+}
+/*
+fun analyseNotificationCondition(
+    context: Context,
+    sessions: List<AppSessionWithCategory>
+): Boolean {
+
+    //var numberOfValidSessions = 0
+
+    val numberOfValidSessions = sessions.count { isValidSession(context, it) }
+
+    /*sessions.forEach {
+        val appInfo = context.packageManager.getApplicationInfo(it.appSession.appPackage, 0)
+        if (isSystemApp(appInfo) || (it.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
+                it.appCategory.category!!
+            ))
+        ) {
+            ++numberOfValidSessions
+        }
+    }*/
+
+    val currentActivity = AppPreferences.with(context).getInt(Const.PREF_CURRENT_ACTIVITY, -1)
+    return (numberOfValidSessions.toDouble() / sessions.size) < 0.5 && validateCurrentActivity(
+        currentActivity
+    )
+}
+*/
+
+fun analyseNotificationCondition(
+    context: Context,
+    sessions: List<AppSessionWithCategory>
+): Boolean {
+
+    val numberOfValidSessions = sessions.count { isValidSession(context, it) }
+    //Log.d(Const.LOG_TAG, "PERCENTAGE: ${numberOfValidSessions.toDouble() / sessions.size}")
+    return (numberOfValidSessions.toDouble() / sessions.size) < 0.5 && validateCurrentActivity(context)
+}
+
+fun isValidSession(context: Context, session: AppSessionWithCategory): Boolean {
+    val appInfo = context.packageManager.getApplicationInfo(session.appSession.appPackage, 0)
+    //Log.d(Const.LOG_TAG, "Session: ${session.appCategory.appPackage} from ${session.appSession.startTimestamp} category: ${session.appCategory.category}")
+    return (isSystemApp(appInfo) || (session.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
+        session.appCategory.category!!)))
+}
+
+fun validateCurrentActivity(context: Context): Boolean {
+    return when (AppPreferences.with(context).getInt(Const.PREF_CURRENT_ACTIVITY, -1)) {
+        DetectedActivity.IN_VEHICLE,
+        DetectedActivity.ON_BICYCLE,
+        DetectedActivity.RUNNING -> false
+        else -> {
+            return true
+        }
+    }
+}
+
+fun activityToString(detectedActivityType: Int): String {
+    return when (detectedActivityType) {
+        DetectedActivity.IN_VEHICLE -> "IN_VEHICLE"
+        DetectedActivity.ON_BICYCLE -> "ON_BICYCLE"
+        DetectedActivity.ON_FOOT -> "ON_FOOT"
+        DetectedActivity.RUNNING -> "RUNNING"
+        DetectedActivity.STILL -> "STILL"
+        DetectedActivity.TILTING -> "TILTING"
+        DetectedActivity.UNKNOWN -> "UNKNOWN"
+        DetectedActivity.WALKING -> "WALKING"
+        else -> {
+            detectedActivityType.toString()
+        }
+    }
+}
+
+fun transactionTypeToString(transactionType: Int): String {
+    return when (transactionType) {
+        ActivityTransition.ACTIVITY_TRANSITION_ENTER -> "ENTER"
+        ActivityTransition.ACTIVITY_TRANSITION_EXIT -> "EXIT"
+        else -> {
+            transactionType.toString()
+        }
+    }
+}
+
+fun isSystemApp(app: ApplicationInfo): Boolean {
+    return app.flags and ApplicationInfo.FLAG_SYSTEM != 0
 }

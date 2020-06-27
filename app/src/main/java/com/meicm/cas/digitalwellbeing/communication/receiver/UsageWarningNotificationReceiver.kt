@@ -12,9 +12,7 @@ import com.meicm.cas.digitalwellbeing.AppState.currentNotificationId
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
-import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.NotificationId
-import com.meicm.cas.digitalwellbeing.util.setEndOfDay
+import com.meicm.cas.digitalwellbeing.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -31,9 +29,10 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         runBlocking {
             currentNotificationId = NotificationId.getNewId()
-            val snoozeIntent: Intent = Intent(context, NotificationSnoozeButtonReceiver::class.java).apply {
-                action = Constant.ACTION_SNOOZE
-            }
+            val snoozeIntent: Intent =
+                Intent(context, NotificationSnoozeButtonReceiver::class.java).apply {
+                    action = Constant.ACTION_SNOOZE
+                }
             val snoozePI: PendingIntent = PendingIntent.getBroadcast(context, 0, snoozeIntent, 0)
 
             val builder = NotificationCompat.Builder(context!!, Const.NOTIFICATION_CHANNEL_GENERAL)
@@ -41,16 +40,21 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
                 .setContentTitle("Usage Warning #$currentNotificationId")
                 .setContentText("You've been using your device for a long period of time. If you're not doing something important, consider resting for a bit.")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .addAction(R.drawable.ic_snooze_black, context.getString(
-                    R.string.label_snooze
-                ), snoozePI)
+                .addAction(
+                    R.drawable.ic_snooze_black, context.getString(
+                        R.string.label_snooze
+                    ), snoozePI
+                )
 
             val notificationManager = NotificationManagerCompat.from(context)
 
             val pref = AppPreferences.with(context)
             notificationManager.cancel(pref.getInt(Const.PREF_UW_LAST_NOTIFICATION_ID, -1))
 
-            Log.d(Const.LOG_TAG, "[UsageWarningNotificationReceiver] Sending usage warning notification #$currentNotificationId")
+            Log.d(
+                Const.LOG_TAG,
+                "[UsageWarningNotificationReceiver] Sending usage warning notification #$currentNotificationId"
+            )
             val shouldNotify = withContext(Dispatchers.IO) {
                 shouldNotify(context)
             }
@@ -58,22 +62,17 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
             AppState.lastUWTimerStart = System.currentTimeMillis()
 
             pref.save(Const.PREF_UW_LAST_NOTIFICATION_ID, currentNotificationId!!)
-            pref.remove(Const.PREF_LAST_UW_TIMER_ELAPSED) // idk why but it doesn't break anything
+            pref.remove(Const.PREF_LAST_UW_TIMER_ELAPSED) // idk why but it doesn't break anything 🤷‍
         }
     }
 
     private fun shouldNotify(context: Context): Boolean {
-//        val currentTimestamp = System.currentTimeMillis()
-//        val startTimestamp = currentTimestamp - Const.UW_ANALYSED_APPS_THRESHOLD_MS
-//        val endTimestamp = Calendar.getInstance(); endTimestamp.setEndOfDay()
-//        val recentAppSessions = AppDatabase
-//            .getDatabase(context)
-//            .appSessionDao()
-//            .getSessionWithCategory(startTimestamp, endTimestamp.timeInMillis)
-//        recentAppSessions.forEach {
-//            Log.d(Const.LOG_TAG, "Recent app session: ${it.appSession.appPackage} | ${}")
-//        }
-
-        return true
+        val currentTimestamp = System.currentTimeMillis()
+        val startTimestamp = currentTimestamp - Const.UW_ANALYSED_APPS_THRESHOLD_MS
+        val recentAppSessions = AppDatabase
+            .getDatabase(context)
+            .appSessionDao()
+            .getSessionWithCategory(startTimestamp, currentTimestamp)
+        return analyseNotificationCondition(context, recentAppSessions)
     }
 }
