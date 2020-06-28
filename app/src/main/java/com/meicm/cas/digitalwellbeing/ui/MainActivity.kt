@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startActivityRecognitionService() {
         recognitionIntent = Intent(this, ActivityRecognitionIntentService::class.java)
+        recognitionService = ActivityRecognitionIntentService()
         if (!isServiceRunning(this, recognitionService.javaClass)) {
             this.startService(recognitionIntent)
         }

@@ -269,9 +269,8 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         if ((usageEvent.eventType == UsageEvents.Event.ACTIVITY_PAUSED) ||
             usageEvent.eventType == UsageEvents.Event.ACTIVITY_STOPPED
         ) {
-            if (currentAppTimestamps.getValue(usageEvent.packageName) == null) {
-                return
-            }
+            if (currentAppTimestamps.getValue(usageEvent.packageName) == null) return
+
             if (!appSessions.containsKey(usageEvent.packageName)) {
                 appSessions[usageEvent.packageName] = mutableListOf()
             }
