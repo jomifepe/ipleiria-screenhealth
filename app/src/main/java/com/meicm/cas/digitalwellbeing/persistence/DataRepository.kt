@@ -27,12 +27,12 @@ class DataRepository(
         for (pkg in appPackages) {
             try {
                 val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg)
-                val appCategory = AppCategory(0, pkg, element?.category)
+                val appCategory = AppCategory(pkg, element?.category)
                 if (appCategoryDao.getAppCategory(pkg) == null) {
                     appCategoryDao.insert(appCategory)
                 }
             } catch (ex: Exception) {
-                appCategoryDao.insert(AppCategory(0, pkg, null))
+                appCategoryDao.insert(AppCategory(pkg, null))
 //                Log.d(Const.LOG_TAG, "Failed to get category for app $pkg, ${ex.message}")
             }
         }

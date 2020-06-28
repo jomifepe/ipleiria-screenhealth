@@ -21,8 +21,11 @@ import kotlinx.coroutines.*
 import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import java.util.*
 
-
 class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
+    var isGatheringUsageStats: Boolean = false
+    var isGatheringUnlocks: Boolean = false
+    var isGatheringCategories: Boolean = false
+
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
@@ -34,11 +37,17 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         return START_STICKY
     }
 
     override fun onHandleIntent(intent: Intent?) {
-        TODO("Not yet implemented")
+        when (intent?.action) {
+            Const.ACTION_GATHER_DATA -> {
+                Log.d(Const.LOG_TAG, "[AppUsageGathererService] Received trigger to gather data")
+                startGatheringData()
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -47,30 +56,31 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
     }
 
     private fun startGatheringData() {
-        runBlocking {
-            CoroutineScope(Dispatchers.IO).launch {
-                gatherInstalledPackagesCategories()
-            }
+        if (!isGatheringUsageStats) gatherUsageStats()
+        if (!isGatheringCategories) gatherAppCategories()
+        if (!isGatheringUnlocks) loadUnlockEntries()
+    }
+    
+    private fun gatherUsageStats() {
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting to gather usage stats...")
+        CoroutineScope(Dispatchers.IO + CoroutineName("GatherUsageStats")).launch {
+            isGatheringUsageStats = true
 
-            /* Check if there are apps that are currently open */
-            val openSessions = withContext(Dispatchers.IO) {
-                return@withContext AppDatabase
-                    .getDatabase(this@AppUsageGathererService)
-                    .appSessionDao()
-                    .getOpenSessions()
-            }
+            val openSessions = AppDatabase
+                .getDatabase(this@AppUsageGathererService)
+                .appSessionDao()
+                .getOpenSessions()
 
             /* Query the usage api to check if the open apps were closed since the last time
                the database was updated */
             closeOpenSessions(openSessions)
 
             /* Get the last app session from the database */
-            val lastSession = withContext(Dispatchers.IO) {
-                return@withContext AppDatabase
+            val lastSession =
+                AppDatabase
                     .getDatabase(this@AppUsageGathererService)
                     .appSessionDao()
                     .getLastSession()
-            }
 
             val startTime = if (lastSession == null) {
                 //TODO: Choose a better start time it should be old
@@ -81,81 +91,10 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
             } else {
                 lastSession.startTimestamp + 1
             }
-            gatherUsageStats(startTime, System.currentTimeMillis())
+            processUsageStats(startTime, System.currentTimeMillis())
+
+            isGatheringUsageStats = false
         }
-
-        val startTime = Calendar.getInstance()
-        startTime.setStartOfDay()
-        startTime.set(Calendar.DAY_OF_YEAR, -7)
-        loadUnlockEntries(startTime.timeInMillis, System.currentTimeMillis())
-    }
-
-    private suspend fun gatherInstalledPackagesCategories() {
-        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting category gathering")
-        val _start = System.nanoTime()
-        val installedPackages = getInstalledPackages(this)
-        val googlePlayService: GooglePlayService = GooglePlayService.create()
-
-        val newAppCategories: MutableList<AppCategory> = mutableListOf()
-        val updatedAppCategories: MutableList<AppCategory> = mutableListOf()
-        for (pkg in installedPackages) {
-            if (/* is system app */ pkg.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
-
-            try {
-                val appCategory = getAppCategory(pkg.packageName)
-
-                if (/* doesn't exist */ appCategory == null) {
-                    val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
-                    newAppCategories.add(AppCategory(0, pkg.packageName, element?.category))
-                } else {
-                    if (appCategory.category != null) continue
-                    val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
-                    appCategory.category = element?.category
-                    updatedAppCategories.add(appCategory)
-                }
-            } catch (ex: Exception) {
-                val existingAppCategory = getAppCategory(pkg.packageName)
-                if (/* doesn't exist */ existingAppCategory == null) {
-                    newAppCategories.add(AppCategory(0, pkg.packageName, null))
-                    Log.d(
-                        Const.LOG_TAG,
-                        "[AppUsageGathererService] No play store page available for app ${pkg.packageName}"
-                    )
-                }
-            }
-        }
-
-        if (newAppCategories.size > 0) {
-            createNewAppCategories(newAppCategories)
-            Log.d(Const.LOG_TAG, "[AppUsageGathererService] Gathered ${newAppCategories.size} new categories")
-        }
-        if (updatedAppCategories.size > 0) {
-            updateAppCategories(updatedAppCategories)
-            Log.d(Const.LOG_TAG, "[AppUsageGathererService] Updated ${newAppCategories.size} new categories")
-        }
-        val _end = System.nanoTime()
-        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Category gathering elapsed time ${(_end - _start) / 1_000_000_000} seconds")
-    }
-
-    private fun getAppCategory(packageName: String): AppCategory? {
-        return AppDatabase
-            .getDatabase(this)
-            .appCategoryDao()
-            .getAppCategory(packageName)
-    }
-
-    private fun createNewAppCategories(appCategory: List<AppCategory>) {
-        AppDatabase
-            .getDatabase(this)
-            .appCategoryDao()
-            .insert(appCategory)
-    }
-
-    private fun updateAppCategories(appCategories: List<AppCategory>) {
-        AppDatabase
-            .getDatabase(this)
-            .appCategoryDao()
-            .update(appCategories)
     }
 
     private fun closeOpenSessions(openSessions: List<AppSession>) {
@@ -174,17 +113,13 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
             }
         }
 
-        runBlocking {
-            CoroutineScope(Dispatchers.IO).launch {
-                AppDatabase
-                    .getDatabase(this@AppUsageGathererService)
-                    .appSessionDao()
-                    .updateSessions(openSessions)
-            }
-        }
+        AppDatabase
+            .getDatabase(this@AppUsageGathererService)
+            .appSessionDao()
+            .updateSessions(openSessions)
     }
 
-    private fun gatherUsageStats(startTime: Long, endTime: Long) {
+    private fun processUsageStats(startTime: Long, endTime: Long) {
         val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
 
         val appsSessions: HashMap<String, MutableList<Pair<Long, Long?>>> =
@@ -212,14 +147,10 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         }
 
         // Add the data to the database
-        runBlocking {
-            CoroutineScope(Dispatchers.IO).launch {
-                AppDatabase
-                    .getDatabase(this@AppUsageGathererService)
-                    .appSessionDao()
-                    .insertAll(dbAppSessionList)
-            }
-        }
+        AppDatabase
+            .getDatabase(this@AppUsageGathererService)
+            .appSessionDao()
+            .insertAll(dbAppSessionList)
     }
 
     private fun processAppsUsageSessions(manager: UsageStatsManager, startTime: Long, endTime: Long)
@@ -253,8 +184,8 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
     }
 
     private fun processEventStats(
-        usageEvent: UsageEvents.Event, appSessions: HashMap<String,
-                MutableList<Pair<Long, Long?>>>, currentAppTimestamps: HashMap<String, Long?>
+        usageEvent: UsageEvents.Event, appSessions: HashMap<String, MutableList<Pair<Long, Long?>>>,
+        currentAppTimestamps: HashMap<String, Long?>
     ) {
 
         if (!currentAppTimestamps.containsKey(usageEvent.packageName)) {
@@ -288,17 +219,98 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         }
     }
 
-    private fun loadUnlockEntries(startTime: Long, endTime: Long) {
-        val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+    private fun gatherAppCategories() {
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting to gather app categories...")
+        CoroutineScope(Dispatchers.IO + CoroutineName("GatherAppCategories")).launch {
+            isGatheringCategories = true
 
-        runBlocking {
-            val lastUnlockTimestamp: Long? = withContext(Dispatchers.IO) {
-                val unlock = AppDatabase
+            val elapsedStart = System.nanoTime()
+            val installedPackages = getInstalledPackages(this@AppUsageGathererService)
+            val googlePlayService: GooglePlayService = GooglePlayService.create()
+
+            val newAppCategories: MutableList<AppCategory> = mutableListOf()
+            val updatedAppCategories: MutableList<AppCategory> = mutableListOf()
+            for (pkg in installedPackages) {
+                try {
+                    val appCategory = getAppCategory(pkg.packageName)
+
+                    if (/* doesn't exist */ appCategory == null) {
+                        val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
+                        newAppCategories.add(AppCategory(pkg.packageName, element?.category))
+                    } else {
+                        if (appCategory.category != null) continue
+                        val element: GooglePlayCategory? = googlePlayService.getAppPage(pkg.packageName)
+                        appCategory.category = element?.category
+                        updatedAppCategories.add(appCategory)
+                    }
+                } catch (ex: Exception) {
+                    if (/* is system app */ pkg.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
+                    val existingAppCategory = getAppCategory(pkg.packageName)
+                    if (/* doesn't exist */ existingAppCategory == null) {
+                        newAppCategories.add(AppCategory(pkg.packageName, null))
+                        Log.d(
+                            Const.LOG_TAG,
+                            "[AppUsageGathererService] No play store page available for app ${pkg.packageName}"
+                        )
+                    }
+                }
+            }
+
+            if (newAppCategories.size > 0) {
+                createNewAppCategories(newAppCategories)
+                Log.d(Const.LOG_TAG, "[AppUsageGathererService] Gathered ${newAppCategories.size} new categories")
+            }
+            if (updatedAppCategories.size > 0) {
+                updateAppCategories(updatedAppCategories)
+                Log.d(Const.LOG_TAG, "[AppUsageGathererService] Updated ${newAppCategories.size} new categories")
+            }
+            val elapsedEnd = System.nanoTime()
+            Log.d(Const.LOG_TAG, "[AppUsageGathererService] Category gathering elapsed time " +
+                    "${(elapsedEnd - elapsedStart) / 1_000_000_000} seconds")
+
+            isGatheringCategories = false
+        }
+    }
+
+    private fun getAppCategory(packageName: String): AppCategory? {
+        return AppDatabase
+            .getDatabase(this)
+            .appCategoryDao()
+            .getAppCategory(packageName)
+    }
+
+    private fun createNewAppCategories(appCategory: List<AppCategory>) {
+        AppDatabase
+            .getDatabase(this)
+            .appCategoryDao()
+            .insert(appCategory)
+    }
+
+    private fun updateAppCategories(appCategories: List<AppCategory>) {
+        AppDatabase
+            .getDatabase(this)
+            .appCategoryDao()
+            .update(appCategories)
+    }
+
+    private fun loadUnlockEntries() {
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting to gather device unlocks...")
+
+        val cal = Calendar.getInstance()
+        cal.setStartOfDay()
+        cal.set(Calendar.DAY_OF_YEAR, -7)
+        val startTime = cal.timeInMillis
+        val endTime = System.currentTimeMillis()
+
+        CoroutineScope(Dispatchers.IO + CoroutineName("GatherScreenUnlocks")).launch {
+            isGatheringUnlocks = true
+
+            val manager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val lastUnlockTimestamp =
+                AppDatabase
                     .getDatabase(this@AppUsageGathererService)
                     .unlockDao()
-                    .getLastUnlock()
-                return@withContext unlock?.startTimestamp
-            }
+                    .getLastUnlock()?.startTimestamp
 
             val startTimeStamp =
                 if (lastUnlockTimestamp != null) {
@@ -333,12 +345,12 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
             // add the remaining unlock (current one) to the list
             if (previousUnlock != null) listUnlocks.add(previousUnlock)
 
-            CoroutineScope(Dispatchers.IO).launch {
-                AppDatabase
-                    .getDatabase(this@AppUsageGathererService)
-                    .unlockDao()
-                    .insertAll(listUnlocks)
-            }
+            AppDatabase
+                .getDatabase(this@AppUsageGathererService)
+                .unlockDao()
+                .insertAll(listUnlocks)
+
+            isGatheringUnlocks = false
         }
     }
 

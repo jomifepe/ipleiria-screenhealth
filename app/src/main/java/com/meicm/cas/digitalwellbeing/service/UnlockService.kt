@@ -24,6 +24,7 @@ class UnlockService: Service() {
     private lateinit var lockUnlockReceiver: LockUnlockReceiver
 
     override fun onCreate() {
+        super.onCreate()
         val filter =
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
             filter.addAction(Intent.ACTION_SCREEN_OFF)
@@ -36,6 +37,7 @@ class UnlockService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             // send broadcast to trigger and "unlock" because the service was down
             Const.ACTION_FIRST_LAUNCH -> sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))

@@ -19,6 +19,7 @@ object Const {
 
     const val ACTION_FIRST_LAUNCH = "$BASE_PACKAGE.intent.action.FIRST_LAUNCH"
     const val ACTION_UNLOCK_SERVICE_RESTART = "$BASE_PACKAGE.intent.action.UNLOCK_SERVICE_RESTART"
+    const val ACTION_GATHER_DATA = "$BASE_PACKAGE.intent.action.GATHER_DATA"
 
     const val UW_UNLOCK_THRESHOLD_MS = 2000L
     const val UW_ANALYSED_APPS_THRESHOLD_MS = 60 * 60000L

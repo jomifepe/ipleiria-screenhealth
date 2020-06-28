@@ -42,23 +42,12 @@ class UsageStatisticsFragment : Fragment() {
     private lateinit var appTimeAdapter: AppTimeUsageRecyclerAdapter
     private lateinit var usageViewModel: UsageViewModel
 
-    private var appSessions: HashMap<String, MutableList<AppSession>>
+    private var appSessions: HashMap<String, MutableList<AppSession>> = hashMapOf()
     private var appCategories: List<AppCategory> = listOf()
     private var unlockCount: Int = 0
 
-    private var startTime: Long
-    private var endTime: Long
-
-    init {
-        val start = Calendar.getInstance()
-        start.setStartOfDay()
-        val end = Calendar.getInstance()
-        end.setEndOfDay()
-
-        appSessions = hashMapOf()
-        startTime = start.timeInMillis
-        endTime = end.timeInMillis
-    }
+    private var startTime: Long = getStartOfDayCalendar().timeInMillis
+    private var endTime: Long = getEndOfDayCalendar().timeInMillis
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_usage_statistics, container, false)
@@ -136,11 +125,9 @@ class UsageStatisticsFragment : Fragment() {
 
     private fun updateUnlocksWithinRange() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
-            if (result.size > unlockCount) {
-                unlockCount = result.size
-                requireActivity().runOnUiThread {
-                    unlock_count.tv_value.text = unlockCount.toString()
-                }
+            unlockCount = result.size
+            requireActivity().runOnUiThread {
+                unlock_count.tv_value.text = unlockCount.toString()
             }
         }
     }

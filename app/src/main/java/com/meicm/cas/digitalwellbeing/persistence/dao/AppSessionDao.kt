@@ -25,10 +25,10 @@ interface AppSessionDao {
     @Query("SELECT * FROM AppSessions ORDER BY start_timestamp DESC LIMIT 1")
     fun getLastSession(): AppSession?
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(session: AppSession)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertAll(sessions: List<AppSession>)
 
     @Update
