@@ -15,7 +15,7 @@ import com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestar
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 
-class UnlockService: Service() {
+class UnlockService : Service() {
     override fun onBind(intent: Intent?): IBinder? {
         Log.i("DW_LOGGING", "Service onBind")
         return null
@@ -24,8 +24,8 @@ class UnlockService: Service() {
     override fun onCreate() {
         val filter =
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
-            filter.addAction(Intent.ACTION_SCREEN_OFF)
-            filter.addAction(Intent.ACTION_SCREEN_ON)
+        filter.addAction(Intent.ACTION_SCREEN_OFF)
+        filter.addAction(Intent.ACTION_SCREEN_ON)
         registerReceiver(LockUnlockReceiver(), filter)
 
 //        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
@@ -57,7 +57,10 @@ class UnlockService: Service() {
         if (AppState.lastUWTimerStart == null) return
         val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
         AppPreferences.with(this).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
-        Log.d(Const.LOG_TAG, "[UnlockService] Saving current usage warning time: ${elapsedTime / 1000.0} s")
+        Log.d(
+            Const.LOG_TAG,
+            "[UnlockService] Saving current usage warning time: ${elapsedTime / 1000.0} s"
+        )
     }
 
     private fun tryToDestroyReceiver() {

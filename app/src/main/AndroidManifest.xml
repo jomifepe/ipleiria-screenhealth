@@ -34,8 +34,7 @@
             android:exported="true" />
         <service
             android:name=".service.ActivityRecognitionIntentService"
-            android:enabled="true"
-            android:exported="true" />
+            android:enabled="true" />
         <receiver
             android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver"
             android:enabled="true"
@@ -46,6 +45,10 @@
             android:exported="true" />
         <receiver
             android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.ActivityRecognitionReceiver"
             android:enabled="true"
             android:exported="true" />
     </application>

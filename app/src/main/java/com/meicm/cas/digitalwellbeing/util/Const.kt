@@ -26,4 +26,10 @@ object Const {
     const val UW_ANALYSED_APPS_THRESHOLD_MS = 60 * 60000
     const val UW_TIME_TO_TRIGGER = 5000L
     val UW_ALLOWED_CATEGORIES = setOf("Productivity", "Tools")
+
+    //Used on requestActivityUpdates to
+    const val ACTIVITY_UPDATE_TIME = 200L
+
+    //Used on analyse Notification Condition to give the required percentage of allowed apps to whether or not send a notification
+    const val ALLOWED_APPS_PERCENTAGE = 0.5
 }

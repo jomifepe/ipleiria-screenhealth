@@ -5,10 +5,8 @@ import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.util.Log
 import com.google.android.gms.location.ActivityTransition
 import com.google.android.gms.location.DetectedActivity
-import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSessionWithCategory
 import com.meicm.cas.digitalwellbeing.util.Const.UW_ALLOWED_CATEGORIES
@@ -104,32 +102,6 @@ fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolea
     return manager.getRunningServices(Integer.MAX_VALUE)
         .any { it.service.className == serviceClass.name }
 }
-/*
-fun analyseNotificationCondition(
-    context: Context,
-    sessions: List<AppSessionWithCategory>
-): Boolean {
-
-    //var numberOfValidSessions = 0
-
-    val numberOfValidSessions = sessions.count { isValidSession(context, it) }
-
-    /*sessions.forEach {
-        val appInfo = context.packageManager.getApplicationInfo(it.appSession.appPackage, 0)
-        if (isSystemApp(appInfo) || (it.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
-                it.appCategory.category!!
-            ))
-        ) {
-            ++numberOfValidSessions
-        }
-    }*/
-
-    val currentActivity = AppPreferences.with(context).getInt(Const.PREF_CURRENT_ACTIVITY, -1)
-    return (numberOfValidSessions.toDouble() / sessions.size) < 0.5 && validateCurrentActivity(
-        currentActivity
-    )
-}
-*/
 
 fun analyseNotificationCondition(
     context: Context,
@@ -138,14 +110,17 @@ fun analyseNotificationCondition(
 
     val numberOfValidSessions = sessions.count { isValidSession(context, it) }
     //Log.d(Const.LOG_TAG, "PERCENTAGE: ${numberOfValidSessions.toDouble() / sessions.size}")
-    return (numberOfValidSessions.toDouble() / sessions.size) < 0.5 && validateCurrentActivity(context)
+    return (numberOfValidSessions.toDouble() / sessions.size) < Const.ALLOWED_APPS_PERCENTAGE && validateCurrentActivity(
+        context
+    )
 }
 
 fun isValidSession(context: Context, session: AppSessionWithCategory): Boolean {
     val appInfo = context.packageManager.getApplicationInfo(session.appSession.appPackage, 0)
     //Log.d(Const.LOG_TAG, "Session: ${session.appCategory.appPackage} from ${session.appSession.startTimestamp} category: ${session.appCategory.category}")
     return (isSystemApp(appInfo) || (session.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
-        session.appCategory.category!!)))
+        session.appCategory.category!!
+    )))
 }
 
 fun validateCurrentActivity(context: Context): Boolean {

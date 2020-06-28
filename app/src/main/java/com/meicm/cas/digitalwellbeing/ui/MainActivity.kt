@@ -2,20 +2,20 @@ package com.meicm.cas.digitalwellbeing.ui
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.findNavController
 import androidx.navigation.ui.NavigationUI
-import com.meicm.cas.digitalwellbeing.util.setEndOfDay
-import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
-import com.meicm.cas.digitalwellbeing.util.Const
-import com.meicm.cas.digitalwellbeing.util.getDateStringFromEpoch
+import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
+import com.meicm.cas.digitalwellbeing.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 import org.greenrobot.eventbus.EventBus
 import java.util.*
@@ -24,6 +24,9 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     private var startTime: Calendar
     private var endTime: Calendar
+
+    private var recognitionIntent = Intent()
+    private var recognitionService: ActivityRecognitionIntentService = ActivityRecognitionIntentService()
 
     init {
         startTime = getStartOfDayCalendar()
@@ -41,12 +44,26 @@ class MainActivity : AppCompatActivity() {
         incrementAppRunCount()
         createNotificationChannel()
         updateTimeRangeLabel()
+        startActivityRecognitionService()
 
         bt_date_range_backwards.setOnClickListener {
             incrementOrDecrementTimeRange(-1)
         }
         bt_date_range_forward.setOnClickListener {
             incrementOrDecrementTimeRange(1)
+        }
+    }
+
+    override fun onDestroy() {
+        Log.d(Const.LOG_TAG, "On destroy")
+        stopService(recognitionIntent)
+        super.onDestroy()
+    }
+
+    private fun startActivityRecognitionService() {
+        recognitionIntent = Intent(this, ActivityRecognitionIntentService::class.java)
+        if (!isServiceRunning(this, recognitionService.javaClass)) {
+            this.startService(recognitionIntent)
         }
     }
 

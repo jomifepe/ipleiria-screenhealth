@@ -6,10 +6,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.GoogleApiActivity
 import com.google.android.gms.location.*
+import com.google.android.gms.location.ActivityTransition.*
 import com.google.android.gms.location.DetectedActivity.*
 import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
@@ -17,6 +19,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
 import com.meicm.cas.digitalwellbeing.util.*
+import com.meicm.cas.digitalwellbeing.util.Const.ACTIVITY_UPDATE_TIME
 import kotlinx.coroutines.*
 import java.lang.Exception
 import java.util.*
@@ -24,9 +27,6 @@ import java.util.*
 class LockUnlockReceiver : BroadcastReceiver() {
     private lateinit var alarmManager: AlarmManager
     private var alarmPI: PendingIntent? = null
-
-    private var activityRecognitionPendingIntent: PendingIntent? = null
-    private var activityRecognitionClient: ActivityRecognitionClient? = null
 
     override fun onReceive(context: Context?, intent: Intent?) {
         alarmManager = context!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -53,7 +53,6 @@ class LockUnlockReceiver : BroadcastReceiver() {
 
         saveCurrentUsageWarningTimer(context, lockTime)
         saveLockTime(context, lockTime)
-        stopActivityRecognition()
         // TODO: Fix no alarm clear when the app is killed
         // Cancel existing alarm
         if (alarmPI != null) {
@@ -83,7 +82,6 @@ class LockUnlockReceiver : BroadcastReceiver() {
             Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Inserted unlock into the database")
         }
 
-        startActivityRecognition(context)
         tryLaunchUsageWarningTimer(context)
     }
 
@@ -154,189 +152,5 @@ class LockUnlockReceiver : BroadcastReceiver() {
             return
         }
         alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)
-    }
-
-    private fun startActivityRecognition(context: Context) {
-        try {
-            if (GoogleApiAvailability.getInstance()
-                    .isGooglePlayServicesAvailable(context) != ConnectionResult.SUCCESS
-            ) return
-
-            activityRecognitionPendingIntent = PendingIntent.getService(
-                context,
-                0,
-                Intent(context, ActivityRecognitionIntentService::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT
-            )
-
-            activityRecognitionClient = ActivityRecognition.getClient(context)
-
-            activityRecognitionClient!!.requestActivityUpdates(
-                200L,
-                activityRecognitionPendingIntent!!
-            )
-
-            val task = activityRecognitionClient!!.requestActivityTransitionUpdates(
-                buildTransitionRequest(), activityRecognitionPendingIntent!!
-            )
-
-            /*val task = ActivityRecognition.getClient(context)
-                .requestActivityTransitionUpdates(request, activityRecognitionPendingIntent)*/
-
-            task.addOnSuccessListener {
-                Log.d(
-                    Const.LOG_TAG,
-                    "Succsess starting activity recognition service"
-                )
-            }
-            task.addOnFailureListener { e: Exception ->
-                Log.d(
-                    Const.LOG_TAG,
-                    "Error on requestActivityTransitionUpdates message: ${e.message}"
-                )
-            }
-        } catch (e: Exception) {
-            Log.d(
-                Const.LOG_TAG,
-                "Error starting activity recognition service"
-            )
-        }
-    }
-
-    /*private fun startActivityRecognition(context: Context) {
-        try {
-            if (GoogleApiAvailability.getInstance()
-                    .isGooglePlayServicesAvailable(context) != ConnectionResult.SUCCESS
-            ) return
-            activityRecognitionPendingIntent = PendingIntent.getService(
-                context,
-                0,
-                Intent(context, ActivityRecognitionIntentService::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            activityRecognitionClient = ActivityRecognition.getClient(context)
-            activityRecognitionClient!!.requestActivityUpdates(
-                200L,
-                activityRecognitionPendingIntent!!
-            )
-            Log.d(
-                Const.LOG_TAG,
-                "Succsess starting activity recognition service"
-            )
-        } catch (e: Exception) {
-            Log.d(
-                Const.LOG_TAG,
-                "Error starting activity recognition service"
-            )
-        }
-    }*/
-    /*private fun stopActivityRecognition(){
-        try {
-            if(activityRecognitionClient == null || activityRecognitionPendingIntent == null) return
-            activityRecognitionClient!!.removeActivityUpdates(activityRecognitionPendingIntent!!)
-            activityRecognitionClient = null
-            activityRecognitionPendingIntent = null
-            Log.d(
-                Const.LOG_TAG,
-                "Success stopping activity recognition service"
-            )
-        }catch (e: Exception){
-            Log.d(
-                Const.LOG_TAG,
-                "Error stopping activity recognition service"
-            )
-        }
-    }*/
-
-    private fun stopActivityRecognition() {
-        try {
-            if (activityRecognitionClient == null || activityRecognitionPendingIntent == null) return
-            activityRecognitionClient!!.removeActivityUpdates(activityRecognitionPendingIntent!!)
-            activityRecognitionClient!!.removeActivityTransitionUpdates(
-                activityRecognitionPendingIntent!!
-            )
-            activityRecognitionClient = null
-            activityRecognitionPendingIntent = null
-            Log.d(
-                Const.LOG_TAG,
-                "Success stopping activity recognition service"
-            )
-        } catch (e: Exception) {
-            Log.d(
-                Const.LOG_TAG,
-                "Error stopping activity recognition service"
-            )
-        }
-    }
-
-    private fun buildTransitionRequest(): ActivityTransitionRequest {
-        val transitions = mutableListOf<ActivityTransition>()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(IN_VEHICLE)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(IN_VEHICLE)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(ON_BICYCLE)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(ON_BICYCLE)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(RUNNING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(RUNNING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(STILL)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(ON_FOOT)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(ON_FOOT)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                .build()
-        transitions +=
-            ActivityTransition.Builder()
-                .setActivityType(WALKING)
-                .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                .build()
-
-        return ActivityTransitionRequest(transitions)
     }
 }

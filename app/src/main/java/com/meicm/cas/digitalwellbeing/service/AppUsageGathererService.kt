@@ -362,7 +362,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
     private fun logAppSessions(appSessions: HashMap<String, MutableList<Pair<Long, Long?>>>) {
         var totalPerApp = 0L
         var total = 0L
-        var diff = 0L
+        var diff: Long
         appSessions.forEach {sessions ->
             if (sessions.value.size > 0) {
                 Log.d(Const.LOG_TAG, "App: ${getAppName(this, sessions.key)}")
