@@ -4,6 +4,7 @@ object Const {
     const val BASE_PACKAGE = "com.meicm.cas.digitalwellbeing"
 
     const val SERVICE_NAME_DATA_GATHERER = "Service_UsageGatherer"
+    const val SERVICE_NAME_ACTIVITY_RECOGNITION = "Service_ActivityRecognition"
     const val NOTIFICATION_CHANNEL_GENERAL = "General"
     const val LOG_TAG = "DW_LOGGING"
     const val DATABASE_NAME = "DigitalWellbeing"
@@ -14,6 +15,7 @@ object Const {
     const val PREF_LAST_UW_TIMER_ELAPSED = "$BASE_PACKAGE.preference.uw_last_time"
     const val PREF_UW_LAST_NOTIFICATION_ID = "$BASE_PACKAGE.preference.last_notification_id"
     const val PREF_LOCK_TIME = "$BASE_PACKAGE.preference.lock_time"
+    const val PREF_CURRENT_ACTIVITY = "$BASE_PACKAGE.preference.current_activity"
 
     const val EVENT_TIME_RANGE = "$BASE_PACKAGE.event.timerange"
 
@@ -23,4 +25,11 @@ object Const {
     const val UW_UNLOCK_THRESHOLD_MS = 2000L
     const val UW_ANALYSED_APPS_THRESHOLD_MS = 60 * 60000L
     const val UW_TIME_TO_TRIGGER = 5000L
+    val UW_ALLOWED_CATEGORIES = setOf("Productivity", "Tools")
+
+    //Used on requestActivityUpdates to
+    const val ACTIVITY_UPDATE_TIME = 200L
+
+    //Used on analyse Notification Condition to give the required percentage of allowed apps to whether or not send a notification
+    const val ALLOWED_APPS_PERCENTAGE = 0.5
 }

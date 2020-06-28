@@ -13,26 +13,51 @@ import android.os.IBinder
 import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.location.*
+import com.google.android.gms.location.ActivityTransition.ACTIVITY_TRANSITION_ENTER
+import com.google.android.gms.location.ActivityTransition.ACTIVITY_TRANSITION_EXIT
+import com.meicm.cas.digitalwellbeing.communication.receiver.LockUnlockReceiver
 import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.communication.receiver.LockUnlockReceiver
 import com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
+import com.meicm.cas.digitalwellbeing.util.Const.ACTIVITY_UPDATE_TIME
 
 
 class UnlockService: Service() {
     private lateinit var lockUnlockReceiver: LockUnlockReceiver
+
+    private var activityRecognitionPendingIntent: PendingIntent? = null
+    private var activityRecognitionClient: ActivityRecognitionClient? = null
+
+    private val activityTypesToMonitor = listOf(
+        DetectedActivity.IN_VEHICLE,
+        DetectedActivity.ON_BICYCLE,
+        DetectedActivity.ON_FOOT,
+        DetectedActivity.RUNNING,
+        DetectedActivity.STILL,
+        DetectedActivity.WALKING
+    )
+
+    override fun onBind(intent: Intent?): IBinder? {
+        Log.i("DW_LOGGING", "Service onBind")
+        return null
+    }
 
     override fun onCreate() {
         val filter =
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
             filter.addAction(Intent.ACTION_SCREEN_OFF)
             filter.addAction(Intent.ACTION_SCREEN_ON)
-        lockUnlockReceiver = LockUnlockReceiver()
-        registerReceiver(lockUnlockReceiver, filter)
+        registerReceiver(LockUnlockReceiver(), filter)
 
-        Toast.makeText(this, "[UnlockService] Service created", Toast.LENGTH_SHORT).show()
-        Log.d(Const.LOG_TAG, "[UnlockService] Service created")
+        startActivityRecognition()
+
+//        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
+        Log.d(Const.LOG_TAG, "[UnlockService] Registered broadcast receiver")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -54,16 +79,20 @@ class UnlockService: Service() {
     }
 
     override fun onDestroy() {
-        Log.d(Const.LOG_TAG, "[UnlockService] Service destroyed")
-        unregisterReceiver(lockUnlockReceiver)
-        sendBroadcast(Intent(this, UnlockServiceRestartReceiver::class.java))
+        super.onDestroy()
+        Log.d(Const.LOG_TAG, "[UnlockService] Unlock Service destroyed")
+        stopActivityRecognition()
+        tryToDestroyReceiver()
     }
 
     private fun saveCurrentUsageWarningTimer() {
         if (AppState.lastUWTimerStart == null) return
         val elapsedTime = System.currentTimeMillis() - AppState.lastUWTimerStart!!
         AppPreferences.with(this).save(Const.PREF_LAST_UW_TIMER_ELAPSED, elapsedTime)
-        Log.d(Const.LOG_TAG, "[UnlockService] Saving current usage warning time: ${elapsedTime / 1000.0} s")
+        Log.d(
+            Const.LOG_TAG,
+            "[UnlockService] Saving current usage warning time: ${elapsedTime / 1000.0} s"
+        )
     }
 
     private fun tryToDestroyReceiver() {
@@ -78,4 +107,92 @@ class UnlockService: Service() {
             Log.e(Const.LOG_TAG, "[UnlockService] AlarmManager update was not canceled. $e")
         }
     }
+
+    private fun startActivityRecognition() {
+        try {
+            Toast.makeText(this, "#####startActivityRecognition#####", Toast.LENGTH_SHORT).show()
+            Log.d(
+                Const.LOG_TAG,
+                "#####startActivityRecognition#####"
+            )
+
+            if (activityRecognitionPendingIntent != null && activityRecognitionClient != null) return
+            if (GoogleApiAvailability.getInstance()
+                    .isGooglePlayServicesAvailable(this) != ConnectionResult.SUCCESS
+            ) return
+
+            activityRecognitionPendingIntent = PendingIntent.getService(
+                this,
+                0,
+                Intent(this, ActivityRecognitionIntentService::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            activityRecognitionClient = ActivityRecognition.getClient(this)
+            activityRecognitionClient!!.requestActivityUpdates(
+                ACTIVITY_UPDATE_TIME,
+                activityRecognitionPendingIntent
+            )
+           activityRecognitionClient!!.requestActivityTransitionUpdates(
+                buildTransitionRequest(), activityRecognitionPendingIntent)
+
+            Log.d(
+                Const.LOG_TAG,
+                "#####Trying to start the service#####"
+            )
+
+        } catch (e: Exception) {
+            Log.d(
+                Const.LOG_TAG,
+                "Error starting activity recognition service"
+            )
+        }
+    }
+
+    private fun stopActivityRecognition() {
+        try {
+            if (activityRecognitionClient == null || activityRecognitionPendingIntent == null) return
+            activityRecognitionClient!!.removeActivityUpdates(activityRecognitionPendingIntent!!)
+            activityRecognitionClient!!.removeActivityTransitionUpdates(
+                activityRecognitionPendingIntent!!
+            )
+            activityRecognitionClient = null
+            activityRecognitionPendingIntent = null
+            Log.d(
+                Const.LOG_TAG,
+                "Success stopping activity recognition service"
+            )
+        } catch (e: Exception) {
+            Log.d(
+                Const.LOG_TAG,
+                "Error stopping activity recognition service"
+            )
+        }
+    }
+
+    private fun buildTransitionRequest(): ActivityTransitionRequest {
+        val transitions = mutableListOf<ActivityTransition>()
+        activityTypesToMonitor.forEach {
+            transitions += createActivityTransaction(it, ACTIVITY_TRANSITION_ENTER)
+            transitions += createActivityTransaction(it, ACTIVITY_TRANSITION_EXIT)
+        }
+        return ActivityTransitionRequest(transitions)
+    }
+
+    private fun createActivityTransaction(
+        activity: Int,
+        activityTransition: Int
+    ): ActivityTransition {
+        return ActivityTransition.Builder()
+            .setActivityType(activity)
+            .setActivityTransition(activityTransition)
+            .build()
+    }
+
+//    override fun onDestroy() {
+//        val broadcastIntent = Intent()
+//        broadcastIntent.action = "restartservice"
+//        broadcastIntent.setClass(this, BroadcastReceiverRestarter::class.java)
+//        this.sendBroadcast(broadcastIntent)
+//    }
 }

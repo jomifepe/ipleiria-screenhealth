@@ -6,7 +6,11 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import com.google.android.gms.location.ActivityTransition
+import com.google.android.gms.location.DetectedActivity
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppSessionWithCategory
+import com.meicm.cas.digitalwellbeing.util.Const.UW_ALLOWED_CATEGORIES
 import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -100,7 +104,8 @@ fun getApplicationIcon(context: Context, packageName: String): Drawable {
 
 fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    return manager.getRunningServices(Integer.MAX_VALUE).any { it.service.className == serviceClass.name }
+    return manager.getRunningServices(Integer.MAX_VALUE)
+        .any { it.service.className == serviceClass.name }
 }
 
 fun getStartOfDayCalendar(): Calendar {
@@ -121,3 +126,65 @@ fun getCalendarFromMillis(millis: Long): Calendar {
     return cal
 }
 
+
+
+fun analyseNotificationCondition(
+    context: Context,
+    sessions: List<AppSessionWithCategory>
+): Boolean {
+
+    val numberOfValidSessions = sessions.count { isValidSession(context, it) }
+    //Log.d(Const.LOG_TAG, "PERCENTAGE: ${numberOfValidSessions.toDouble() / sessions.size}")
+    return (numberOfValidSessions.toDouble() / sessions.size) < Const.ALLOWED_APPS_PERCENTAGE && validateCurrentActivity(
+        context
+    )
+}
+
+fun isValidSession(context: Context, session: AppSessionWithCategory): Boolean {
+    val appInfo = context.packageManager.getApplicationInfo(session.appSession.appPackage, 0)
+    //Log.d(Const.LOG_TAG, "Session: ${session.appCategory.appPackage} from ${session.appSession.startTimestamp} category: ${session.appCategory.category}")
+    return (isSystemApp(appInfo) || (session.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
+        session.appCategory.category!!
+    )))
+}
+
+fun validateCurrentActivity(context: Context): Boolean {
+    return when (AppPreferences.with(context).getInt(Const.PREF_CURRENT_ACTIVITY, -1)) {
+        DetectedActivity.IN_VEHICLE,
+        DetectedActivity.ON_BICYCLE,
+        DetectedActivity.RUNNING -> false
+        else -> {
+            return true
+        }
+    }
+}
+
+fun activityToString(detectedActivityType: Int): String {
+    return when (detectedActivityType) {
+        DetectedActivity.IN_VEHICLE -> "IN_VEHICLE"
+        DetectedActivity.ON_BICYCLE -> "ON_BICYCLE"
+        DetectedActivity.ON_FOOT -> "ON_FOOT"
+        DetectedActivity.RUNNING -> "RUNNING"
+        DetectedActivity.STILL -> "STILL"
+        DetectedActivity.TILTING -> "TILTING"
+        DetectedActivity.UNKNOWN -> "UNKNOWN"
+        DetectedActivity.WALKING -> "WALKING"
+        else -> {
+            detectedActivityType.toString()
+        }
+    }
+}
+
+fun transactionTypeToString(transactionType: Int): String {
+    return when (transactionType) {
+        ActivityTransition.ACTIVITY_TRANSITION_ENTER -> "ENTER"
+        ActivityTransition.ACTIVITY_TRANSITION_EXIT -> "EXIT"
+        else -> {
+            transactionType.toString()
+        }
+    }
+}
+
+fun isSystemApp(app: ApplicationInfo): Boolean {
+    return app.flags and ApplicationInfo.FLAG_SYSTEM != 0
+}

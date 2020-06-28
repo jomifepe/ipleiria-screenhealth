@@ -23,6 +23,7 @@ import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
+import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
 import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
 import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.ui.adapter.AppTimeUsageRecyclerAdapter
@@ -60,8 +61,15 @@ class UsageStatisticsFragment : Fragment() {
         endTime = end.timeInMillis
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_usage_statistics, container, false)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = DataBindingUtil.inflate(
+            inflater,
+            R.layout.fragment_usage_statistics, container, false
+        )
         setHasOptionsMenu(true)
 
         setupStaticViews()
@@ -136,12 +144,11 @@ class UsageStatisticsFragment : Fragment() {
 
     private fun updateUnlocksWithinRange() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
-            if (result.size > unlockCount) {
-                unlockCount = result.size
-                requireActivity().runOnUiThread {
-                    unlock_count.tv_value.text = unlockCount.toString()
-                }
+            unlockCount = result.size
+            requireActivity().runOnUiThread {
             }
+            //  }
+            //
         }
     }
 

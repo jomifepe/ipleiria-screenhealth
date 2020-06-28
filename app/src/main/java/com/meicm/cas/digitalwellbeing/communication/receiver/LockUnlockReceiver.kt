@@ -6,12 +6,22 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.GoogleApiActivity
+import com.google.android.gms.location.*
+import com.google.android.gms.location.ActivityTransition.*
+import com.google.android.gms.location.DetectedActivity.*
 import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
+import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
 import com.meicm.cas.digitalwellbeing.util.*
+import com.meicm.cas.digitalwellbeing.util.Const.ACTIVITY_UPDATE_TIME
 import kotlinx.coroutines.*
+import java.lang.Exception
 import java.util.*
 
 class LockUnlockReceiver : BroadcastReceiver() {
@@ -44,7 +54,6 @@ class LockUnlockReceiver : BroadcastReceiver() {
 
         saveCurrentUsageWarningTimer(context, lockTime)
         saveLockTime(context, lockTime)
-
         // TODO: Fix no alarm clear when the app is killed
 
         // Cancel existing alarm
@@ -97,7 +106,10 @@ class LockUnlockReceiver : BroadcastReceiver() {
             if (!snoozeIsToday) {
                 launchWarningRepeatingTimer(context, true)
             } else {
-                Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Snooze detected, no usage warning timer started")
+                Log.d(
+                    Const.LOG_TAG,
+                    "[LockUnlockReceiver] Snooze detected, no usage warning timer started"
+                )
             }
         } else {
             launchWarningRepeatingTimer(context, true)
@@ -108,13 +120,13 @@ class LockUnlockReceiver : BroadcastReceiver() {
         val alarmIntent = Intent(context, UsageWarningNotificationReceiver::class.java)
         alarmPI = PendingIntent.getBroadcast(context, 0, alarmIntent, 0)
 
-        val currentTimestamp = System.currentTimeMillis()
         val savedLastTimerElapsed =
             AppPreferences.with(context).getLong(Const.PREF_LAST_UW_TIMER_ELAPSED, 0)
         val lastLockTimestamp = AppPreferences.with(context).getLong(Const.PREF_LOCK_TIME, 0)
 
         /* if there's a saved last timer elapsed time and the last lock time wasn't too long ago
            this is used to prevent quick lock & unlocks from resetting the timer */
+        val currentTimestamp = System.currentTimeMillis()
         val alarmTimestamp =
             currentTimestamp + if (savedLastTimerElapsed != 0L && (currentTimestamp - lastLockTimestamp) <= Const.UW_UNLOCK_THRESHOLD_MS) {
                 Const.UW_TIME_TO_TRIGGER - savedLastTimerElapsed
@@ -123,13 +135,20 @@ class LockUnlockReceiver : BroadcastReceiver() {
             }
 
         val hsm = getHoursMinutesSecondsString(alarmTimestamp - currentTimestamp)
-        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Starting usage notification timer, " +
-                "triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)} ($alarmTimestamp)" +
-                " - $hsm from now")
+        Log.d(
+            Const.LOG_TAG, "[LockUnlockReceiver] Starting usage notification timer, " +
+                    "triggering at: ${getDateTimeStringFromEpoch(alarmTimestamp)} ($alarmTimestamp)" +
+                    " - $hsm from now"
+        )
 
         if (AppState.lastUWTimerStart == null) AppState.lastUWTimerStart = currentTimestamp
         if (repeating) {
-            alarmManager.setRepeating(AlarmManager.RTC, alarmTimestamp, Const.UW_TIME_TO_TRIGGER, alarmPI)
+            alarmManager.setRepeating(
+                AlarmManager.RTC,
+                alarmTimestamp,
+                Const.UW_TIME_TO_TRIGGER,
+                alarmPI
+            )
             return
         }
         alarmManager.set(AlarmManager.RTC, alarmTimestamp, alarmPI)

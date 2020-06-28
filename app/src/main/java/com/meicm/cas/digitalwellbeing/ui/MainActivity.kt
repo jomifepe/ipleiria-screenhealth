@@ -8,8 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.opengl.Visibility
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.os.Handler
 import android.provider.Settings
 import android.view.Menu
@@ -29,6 +31,8 @@ import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.ActivityMainBinding
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
+import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
+import com.meicm.cas.digitalwellbeing.util.*
 import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
 import com.meicm.cas.digitalwellbeing.service.UnlockService
 import com.meicm.cas.digitalwellbeing.util.*
@@ -48,6 +52,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var unlocksServiceIntent: Intent
     private lateinit var usageGathererServiceIntent: Intent
 
+    private var recognitionIntent = Intent()
+    private var recognitionService: ActivityRecognitionIntentService = ActivityRecognitionIntentService()
+
+    init {
+        startTime = getStartOfDayCalendar()
+        endTime = getEndOfDayCalendar()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
@@ -56,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         incrementAppRunCount()
         createNotificationChannel()
         updateTimeRangeLabel()
+        startActivityRecognitionService()
 
         time_picker.bt_date_range_backwards.setOnClickListener { incrementOrDecrementTimeRange(-1) }
         time_picker.bt_date_range_forward.setOnClickListener { incrementOrDecrementTimeRange(1) }
@@ -172,6 +185,20 @@ class MainActivity : AppCompatActivity() {
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
+    }
+
+    override fun onDestroy() {
+        Log.d(Const.LOG_TAG, "On destroy")
+        stopService(recognitionIntent)
+        super.onDestroy()
+    }
+
+    private fun startActivityRecognitionService() {
+        recognitionIntent = Intent(this, ActivityRecognitionIntentService::class.java)
+        recognitionService = ActivityRecognitionIntentService()
+        if (!isServiceRunning(this, recognitionService.javaClass)) {
+            this.startService(recognitionIntent)
+        }
     }
 
     private fun incrementAppRunCount() {

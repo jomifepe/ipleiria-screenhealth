@@ -7,6 +7,11 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- API 29 and later !-->
+    <uses-permission android:name="com.permission.ACTIVITY_RECOGNITION" />
+    <!-- API 28 and earlier !-->
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -22,16 +27,34 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service android:name=".service.UnlockService" android:enabled="true" />
-        <service android:name=".service.AppUsageGathererService" android:enabled="true" />
-
-        <receiver android:name=".communication.receiver.UsageWarningNotificationReceiver"
-            android:enabled="true" android:exported="true" />
-        <receiver android:name=".communication.receiver.NotificationSnoozeButtonReceiver"
-            android:enabled="true" android:exported="true" />
-        <receiver android:name=".communication.receiver.UnlockServiceRestartReceiver"
-            android:enabled="true" android:exported="true" />
+        <service
+            android:name=".service.UnlockService"
+            android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name=".service.AppUsageGathererService"
+            android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name=".service.ActivityRecognitionIntentService"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.NotificationSnoozeButtonReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver"
+            android:enabled="true"
+            android:exported="true" />
+        <receiver
+            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.ActivityRecognitionReceiver"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
