@@ -10,12 +10,7 @@ import com.meicm.cas.digitalwellbeing.util.Const
 
 class UnlockServiceRestartReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        when (intent?.action) {
-            Const.ACTION_UNLOCK_SERVICE_RESTART -> {
-                Log.d(Const.LOG_TAG, "Restarted Unlock Service")
-                Toast.makeText(context, "Restarted Unlock Service", Toast.LENGTH_SHORT).show()
-                context?.startService(Intent(context, UnlockService::class.java))
-            }
-        }
+        Log.d(Const.LOG_TAG, "[UnlockServiceRestartReceiver] Restarted UnlockService")
+        context?.startService(Intent(context, UnlockService::class.java))
     }
 }

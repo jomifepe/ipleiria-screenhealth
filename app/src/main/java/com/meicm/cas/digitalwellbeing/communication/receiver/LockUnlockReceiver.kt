@@ -21,6 +21,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         alarmManager = context!!.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] onReceive")
         when (intent?.action) {
             Const.ACTION_FIRST_LAUNCH -> tryLaunchUsageWarningTimer(context)
             Intent.ACTION_SCREEN_ON -> performUnlockActions(context)
@@ -29,7 +30,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
     }
 
     private fun performLockActions(context: Context) {
-        Log.d(Const.LOG_TAG, "Locked")
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Locked screen")
         val lockTime = System.currentTimeMillis()
         AppState.isUnlocked = false
 
@@ -45,13 +46,12 @@ class LockUnlockReceiver : BroadcastReceiver() {
         saveLockTime(context, lockTime)
 
         // TODO: Fix no alarm clear when the app is killed
+
         // Cancel existing alarm
-        if (alarmPI != null) {
-            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Cancelling existing alarm")
-            alarmManager.cancel(alarmPI)
-        } else {
-            Log.d(Const.LOG_TAG, "[LockUnlockReceiver] No alarms to cancel")
-        }
+        val pi = PendingIntent.getBroadcast(context, 0,
+            Intent(context, UsageWarningNotificationReceiver::class.java), 0)
+        alarmManager.cancel(pi)
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Cancelling existing alarms")
     }
 
     private fun saveLockTime(context: Context, lockTime: Long) {
@@ -60,7 +60,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
     }
 
     private fun performUnlockActions(context: Context) {
-        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Unlocked")
+        Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Unlocked screen")
 
         AppState.isUnlocked = true
         AppState.unlockTime = System.currentTimeMillis()

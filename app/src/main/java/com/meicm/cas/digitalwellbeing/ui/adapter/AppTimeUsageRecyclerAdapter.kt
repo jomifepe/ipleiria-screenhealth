@@ -1,12 +1,21 @@
 package com.meicm.cas.digitalwellbeing.ui.adapter
 
+import android.content.Context
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.meicm.cas.digitalwellbeing.R
+import com.meicm.cas.digitalwellbeing.util.getAppName
+import com.meicm.cas.digitalwellbeing.util.getApplicationIcon
+import com.meicm.cas.digitalwellbeing.util.getApplicationInfo
+import com.meicm.cas.digitalwellbeing.util.getHoursMinutesSecondsString
 import kotlinx.android.synthetic.main.app_time_usage_list_item.view.*
+import java.lang.Exception
+import java.lang.ref.WeakReference
 
 class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
     BaseRecyclerAdapter<Pair<String, Long>, AppTimeUsageRecyclerAdapter.ViewHolder>(onShortClick) {
@@ -17,29 +26,25 @@ class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
         val viewHolder = ViewHolder(view)
 
         if (shortClickListener != null) {
-            view.setOnClickListener { v -> shortClickListener!!.onShortClick(v, viewHolder.layoutPosition) }
+            view.setOnClickListener { v ->
+                shortClickListener!!.onShortClick(v, viewHolder.layoutPosition) }
         }
         return viewHolder
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val data = list[position]
-
-//        val seconds: Long = TimeUnit.MILLISECONDS.toHours(data.totalTimeInForeground)
-//        val minutes: Long = TimeUnit.MILLISECONDS.toMinutes(data.totalTimeInForeground)
-//        val hours: Long = TimeUnit.MILLISECONDS.toSeconds(data.totalTimeInForeground)
-
-        val seconds: Long = (data.second / 1000) % 60
-        val minutes: Long = (data.second / (1000 * 60)) % 60
-        val hours: Long = (data.second / (1000 * 60 * 60))
-        val time = "$hours h $minutes min $seconds s"
-
-        holder.name.text = data.first
+        val time = getHoursMinutesSecondsString(data.second)
+        holder.name.text = getAppName(holder.name.context, data.first)
         holder.time.text = time
+        try {
+            holder.icon.setImageDrawable(getApplicationIcon(holder.icon.context, data.first))
+        } catch (ex: Exception) {}
     }
 
     class ViewHolder (view: View): RecyclerView.ViewHolder(view) {
         val name: TextView = view.tv_app_time_name
         val time: TextView = view.tv_app_time_values
+        val icon: ImageView = view.iv_app_time_icon
     }
 }

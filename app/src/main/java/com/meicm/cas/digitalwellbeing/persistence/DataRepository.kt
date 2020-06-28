@@ -1,4 +1,4 @@
-package com.meicm.cas.digitalwellbeing
+package com.meicm.cas.digitalwellbeing.persistence
 
 import androidx.lifecycle.LiveData
 import com.meicm.cas.digitalwellbeing.persistence.dao.AppCategoryDao
@@ -36,6 +36,12 @@ class DataRepository(
 //                Log.d(Const.LOG_TAG, "Failed to get category for app $pkg, ${ex.message}")
             }
         }
+    }
+
+    fun getAppSessions(packageName: String, startTime: Long, endTime: Long): List<AppSession> {
+        val sessions = appSessionDao.getSessionByRange(packageName, startTime, endTime).toMutableList()
+        sessions.forEach { if (it.endTimestamp == null) it.endTimestamp = System.currentTimeMillis() }
+        return sessions
     }
 
     fun getAppSessions(

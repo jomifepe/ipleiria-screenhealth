@@ -5,11 +5,11 @@ import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 fun compareTimestampsDateEqual(timestamp1: Long, timestamp2: Long): Boolean {
     val cal1 = Calendar.getInstance()
@@ -37,14 +37,11 @@ fun getHoursMinutesSeconds(timeInMillis: Long): Triple<Long, Long, Long> {
 }
 
 fun getHoursMinutesSecondsString(timeInMillis: Long): String {
-    val seconds: Long = (timeInMillis / 1000) % 60
-    val minutes: Long = (timeInMillis / (1000 * 60)) % 60
-    val hours: Long = (timeInMillis / (1000 * 60 * 60))
-
+    val hms = getHoursMinutesSeconds(timeInMillis)
     val str = StringBuilder()
-    if (hours > 0) str.append("$hours h")
-    if (minutes > 0) str.append(" $minutes min")
-    if (seconds > 0) str.append(" $seconds s")
+    if (hms.first > 0) str.append("${hms.first} h")
+    if (hms.second > 0) str.append(" ${hms.second} min")
+    if (hms.third > 0) str.append(" ${hms.third} s")
     return str.toString()
 }
 
@@ -93,7 +90,34 @@ fun isAppFirstRun(context: Context): Boolean {
     return AppPreferences.with(context).getInt(Const.PREF_APP_RUN, 0) == 1
 }
 
+fun getApplicationInfo(context: Context, packageName: String): ApplicationInfo {
+    return context.packageManager.getApplicationInfo(packageName, 0)
+}
+
+fun getApplicationIcon(context: Context, packageName: String): Drawable {
+    return context.packageManager.getApplicationIcon(packageName)
+}
+
 fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     return manager.getRunningServices(Integer.MAX_VALUE).any { it.service.className == serviceClass.name }
 }
+
+fun getStartOfDayCalendar(): Calendar {
+    val start = Calendar.getInstance()
+    start.setStartOfDay()
+    return start
+}
+
+fun getEndOfDayCalendar(): Calendar {
+    val end = Calendar.getInstance()
+    end.setEndOfDay()
+    return end
+}
+
+fun getCalendarFromMillis(millis: Long): Calendar {
+    val cal = Calendar.getInstance()
+    cal.timeInMillis = millis
+    return cal
+}
+

@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#304FFE</color>
-    <color name="colorPrimaryDark">#1A237E</color>
-    <color name="colorAccent">#1DE9B6</color>
+    <color name="colorPrimary">@color/nordPolarNight2</color>
+    <color name="colorPrimaryDark">@color/nordPolarNight1</color>
+    <color name="colorAccent">@color/nordFrost2</color>
+
+    <color name="colorAccentRipple">#2688C0D0</color>
+
+    <color name="nordPolarNight1">#2E3440</color>
+    <color name="nordPolarNight2">#3B4252</color>
+    <color name="nordPolarNight3">#434C5E</color>
+    <color name="nordPolarNight4">#4C566A</color>
+    <color name="nordSnow1">#D8DEE9</color>
+    <color name="nordSnow2">#E5E9F0</color>
+    <color name="nordFrost1">#8FBCBB</color>
+    <color name="nordFrost2">#88C0D0</color>
+    <color name="nordFrost3">#81A1C1</color>
+    <color name="nordFrost4">#5E81AC</color>
+    <color name="nordAuroraRed">#BF616A</color>
+    <color name="nordAuroraOrange">#D08770</color>
+    <color name="nordAuroraYellow">#EBCB8B</color>
+    <color name="nordAuroraGreen">#A3BE8C</color>
+    <color name="nordAuroraPink">#B48EAD</color>
 </resources>

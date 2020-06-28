@@ -3,8 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.meicm.cas.digitalwellbeing">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -13,32 +14,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".ui.AppUsageActivity" />
         <activity android:name=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service
-            android:name=".service.UnlockService"
-            android:enabled="true"
-            android:exported="true" />
-        <service
-            android:name=".service.AppUsageGathererService"
-            android:enabled="true"
-            android:exported="true" />
-        <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.NotificationSnoozeButtonReceiver"
-            android:enabled="true"
-            android:exported="true" />
-        <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver"
-            android:enabled="true"
-            android:exported="true" />
+
+        <service android:name=".service.UnlockService" android:enabled="true" />
+        <service android:name=".service.AppUsageGathererService" android:enabled="true" />
+
+        <receiver android:name=".communication.receiver.UsageWarningNotificationReceiver"
+            android:enabled="true" android:exported="true" />
+        <receiver android:name=".communication.receiver.NotificationSnoozeButtonReceiver"
+            android:enabled="true" android:exported="true" />
+        <receiver android:name=".communication.receiver.UnlockServiceRestartReceiver"
+            android:enabled="true" android:exported="true" />
     </application>
 
 </manifest>

@@ -24,13 +24,12 @@ import java.util.*
 
 class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
     override fun onBind(intent: Intent?): IBinder? {
-        Log.i(Const.LOG_TAG, "App usage gatherer bound")
         return null
     }
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(Const.LOG_TAG, "Registered app usage gatherer service")
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Created service")
         startGatheringData()
     }
 
@@ -44,7 +43,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(Const.LOG_TAG, "App usage gatherer service destroyed")
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Service destroyed")
     }
 
     private fun startGatheringData() {
@@ -92,7 +91,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
     }
 
     private suspend fun gatherInstalledPackagesCategories() {
-        Log.d(Const.LOG_TAG, "[CATG] Starting category gathering")
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting category gathering")
         val _start = System.nanoTime()
         val installedPackages = getInstalledPackages(this)
         val googlePlayService: GooglePlayService = GooglePlayService.create()
@@ -120,7 +119,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                     newAppCategories.add(AppCategory(0, pkg.packageName, null))
                     Log.d(
                         Const.LOG_TAG,
-                        "[CATG] No play store page available for app ${pkg.packageName}"
+                        "[AppUsageGathererService] No play store page available for app ${pkg.packageName}"
                     )
                 }
             }
@@ -128,14 +127,14 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
 
         if (newAppCategories.size > 0) {
             createNewAppCategories(newAppCategories)
-            Log.d(Const.LOG_TAG, "[CATG] Gathered ${newAppCategories.size} new categories")
+            Log.d(Const.LOG_TAG, "[AppUsageGathererService] Gathered ${newAppCategories.size} new categories")
         }
         if (updatedAppCategories.size > 0) {
             updateAppCategories(updatedAppCategories)
-            Log.d(Const.LOG_TAG, "[CATG] Updated ${newAppCategories.size} new categories")
+            Log.d(Const.LOG_TAG, "[AppUsageGathererService] Updated ${newAppCategories.size} new categories")
         }
         val _end = System.nanoTime()
-        Log.d(Const.LOG_TAG, "[CATG] Elapsed time ${(_end - _start) / 1_000_000_000} seconds")
+        Log.d(Const.LOG_TAG, "[AppUsageGathererService] Category gathering elapsed time ${(_end - _start) / 1_000_000_000} seconds")
     }
 
     private fun getAppCategory(packageName: String): AppCategory? {
@@ -301,11 +300,12 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                 return@withContext unlock?.startTimestamp
             }
 
-            val startTimeStamp = if (lastUnlockTimestamp != null) {
-                lastUnlockTimestamp + 1
-            } else {
-                startTime
-            }
+            val startTimeStamp =
+                if (lastUnlockTimestamp != null) {
+                    lastUnlockTimestamp + 1
+                } else {
+                    startTime
+                }
 
             val usageEvents: UsageEvents = manager.queryEvents(startTimeStamp, endTime)
             val listUnlocks = mutableListOf<Unlock>()
@@ -315,9 +315,7 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                 val event: UsageEvents.Event = UsageEvents.Event()
                 usageEvents.getNextEvent(event)
 
-                if (event.timeStamp < startTime ||
-                    event.timeStamp > endTime
-                ) continue
+                if (event.timeStamp < startTime || event.timeStamp > endTime) continue
 
                 if (event.eventType == UsageEvents.Event.SCREEN_INTERACTIVE) {
                     previousUnlock = Unlock(0, event.timeStamp, null)

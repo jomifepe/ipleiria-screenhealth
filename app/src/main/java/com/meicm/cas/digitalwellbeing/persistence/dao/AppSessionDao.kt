@@ -13,6 +13,9 @@ interface AppSessionDao {
     @Query("SELECT * FROM AppSessions WHERE start_timestamp >= :startTime AND (end_timestamp <= :endTime OR end_timestamp IS NULL)")
     fun getSessionByRange(startTime: Long, endTime: Long): List<AppSession>
 
+    @Query("SELECT * FROM AppSessions WHERE package_name = :packageName AND start_timestamp >= :startTime AND (end_timestamp <= :endTime OR end_timestamp IS NULL)")
+    fun getSessionByRange(packageName: String, startTime: Long, endTime: Long): List<AppSession>
+
     @Query("SELECT * FROM AppSessions INNER JOIN Categories ON AppSessions.package_name = Categories.package WHERE AppSessions.start_timestamp >= :startTime AND AppSessions.end_timestamp <= :endTime")
     fun getSessionWithCategory(startTime: Long, endTime: Long): List<AppSessionWithCategory>
 

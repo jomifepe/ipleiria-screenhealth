@@ -14,6 +14,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
 import com.meicm.cas.digitalwellbeing.util.NotificationId
+import com.meicm.cas.digitalwellbeing.util.getHoursMinutesSecondsString
 import com.meicm.cas.digitalwellbeing.util.setEndOfDay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,16 +64,13 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
     }
 
     private fun shouldNotify(context: Context): Boolean {
-//        val currentTimestamp = System.currentTimeMillis()
-//        val startTimestamp = currentTimestamp - Const.UW_ANALYSED_APPS_THRESHOLD_MS
-//        val endTimestamp = Calendar.getInstance(); endTimestamp.setEndOfDay()
-//        val recentAppSessions = AppDatabase
-//            .getDatabase(context)
-//            .appSessionDao()
-//            .getSessionWithCategory(startTimestamp, endTimestamp.timeInMillis)
-//        recentAppSessions.forEach {
-//            Log.d(Const.LOG_TAG, "Recent app session: ${it.appSession.appPackage} | ${}")
-//        }
+        val currentTimestamp = System.currentTimeMillis()
+        val startTimestamp = currentTimestamp - Const.UW_ANALYSED_APPS_THRESHOLD_MS
+        val endTimestamp = Calendar.getInstance(); endTimestamp.setEndOfDay()
+        val recentAppSessions = AppDatabase
+            .getDatabase(context)
+            .appSessionDao()
+            .getSessionWithCategory(startTimestamp, endTimestamp.timeInMillis)
 
         return true
     }

@@ -1,7 +1,7 @@
 package com.meicm.cas.digitalwellbeing.util
 
 object Const {
-    private const val BASE_PACKAGE = "com.meicm.cas.digitalwellbeing"
+    const val BASE_PACKAGE = "com.meicm.cas.digitalwellbeing"
 
     const val SERVICE_NAME_DATA_GATHERER = "Service_UsageGatherer"
     const val NOTIFICATION_CHANNEL_GENERAL = "General"
@@ -21,6 +21,6 @@ object Const {
     const val ACTION_UNLOCK_SERVICE_RESTART = "$BASE_PACKAGE.intent.action.UNLOCK_SERVICE_RESTART"
 
     const val UW_UNLOCK_THRESHOLD_MS = 2000L
-    const val UW_ANALYSED_APPS_THRESHOLD_MS = 60 * 60000
+    const val UW_ANALYSED_APPS_THRESHOLD_MS = 60 * 60000L
     const val UW_TIME_TO_TRIGGER = 5000L
 }

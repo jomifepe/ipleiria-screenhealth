@@ -1,59 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".ui.MainActivity"
-        android:background="@color/cardview_dark_background">
+        android:layout_height="wrap_content">
 
-        <fragment
-            android:id="@+id/myNavHostFragment"
-            android:name="androidx.navigation.fragment.NavHostFragment"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            app:defaultNavHost="true"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            app:navGraph="@navigation/navigation" />
-
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="128px"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:gravity="center_horizontal|center_vertical"
-            android:background="#4D000000">
+            android:layout_height="match_parent"
+            android:paddingBottom="40dp">
 
-            <ImageView
-                android:id="@+id/bt_date_range_backwards"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_keyboard_arrow_left_white"/>
-            <TextView
-                android:id="@+id/tv_date_range"
-                android:layout_width="wrap_content"
+            <fragment
+                android:id="@+id/myNavHostFragment"
+                android:name="androidx.navigation.fragment.NavHostFragment"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="Date"
-                android:textColor="@android:color/white"
-                android:gravity="center"
-                android:layout_marginEnd="16dp"
-                android:layout_marginStart="16dp"
-                android:textSize="20sp"/>
-            <ImageView
-                android:id="@+id/bt_date_range_forward"
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_keyboard_arrow_right_white" />
-        </LinearLayout>
+                app:defaultNavHost="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0"
+                app:navGraph="@navigation/navigation" />
+        </RelativeLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <include
+            android:id="@+id/time_picker"
+            layout="@layout/partial_time_picker"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            app:layout_anchor="@id/bottom_navigation_view"
+            android:layout_gravity="top"
+            app:layout_anchorGravity="top|end" />
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="0dp"
+            app:layout_insetEdge="bottom"
+            android:layout_gravity="bottom"
+            android:background="@color/colorPrimaryDark"
+            app:itemBackground="@color/colorPrimaryDark"
+            app:itemIconTint="@drawable/navigation_color_highlight"
+            app:itemTextColor="@drawable/navigation_color_highlight"
+            app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+            app:menu="@menu/navigation" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

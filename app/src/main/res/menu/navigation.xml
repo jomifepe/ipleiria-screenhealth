@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/fragment_usage_statistics"
+        android:icon="@drawable/ic_baseline_dashboard_white"
+        android:title="@string/label_overview"/>
+    <item
+        android:id="@+id/fragment_insights"
+        android:icon="@drawable/ic_baseline_data_usage_white"
+        android:title="@string/label_insights"/>
+</menu>
