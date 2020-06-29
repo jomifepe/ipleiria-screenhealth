@@ -130,30 +130,28 @@ class AppUsageActivity : AppCompatActivity() {
     }
 
     private fun calculateSessionDurations(data: List<AppSession>) {
-        val intervals: MutableList<Pair<Triple<String, Long, Long?>, Int>> = mutableListOf(
-            Pair(Triple("< 1 min", 0L, 60L), 0), Pair(Triple("1-2 min", 61L, 120L), 0),
-            Pair(Triple("2-3 min", 121L, 180L), 0), Pair(Triple("3-5 min", 181L, 300L), 0),
-            Pair(Triple("5-10 min", 301L, 600L), 0), Pair(Triple("10-15 min", 601L, 900L), 0),
-            Pair(Triple("15-30 min", 901L, 1800L), 0), Pair(Triple("30-60 min", 1801L, 3600L), 0),
-            Pair(Triple("1-5 hour", 3601L, 18000L), 0), Pair(Triple("5+ hours", 18001L, null), 0)
+        val intervals: MutableList<SessionDuration> = mutableListOf(
+            SessionDuration("< 1 min", 0L, 60L, 0), SessionDuration("1-2 min", 61L, 120L, 0),
+            SessionDuration("2-3 min", 121L, 180L, 0), SessionDuration("3-5 min", 181L, 300L, 0),
+            SessionDuration("5-10 min", 301L, 600L, 0), SessionDuration("10-15 min", 601L, 900L, 0),
+            SessionDuration("15-30 min", 901L, 1800L, 0), SessionDuration("30-60 min", 1801L, 3600L, 0),
+            SessionDuration("1-5 hour", 3601L, 18000L, 0), SessionDuration("5+ hours", 18001L, null, 0)
         )
 
-        for ((i, session) in data.withIndex()) {
-            val duration = ((session.endTimestamp
-                ?: System.currentTimeMillis()) - session.startTimestamp) / 1000L
+        for (session in data) {
+            val duration = ((session.endTimestamp ?: System.currentTimeMillis()) - session.startTimestamp) / 1000L
             if (duration == 0L) continue
             val index = intervals.indexOfFirst {
-                duration in it.first.second..(it.first.third ?: System.currentTimeMillis())
+                duration in it.minDurationSec..(it.maxDurationSec ?: System.currentTimeMillis())
             }
-            if (index != -1) intervals[index] =
-                intervals[index].copy(second = intervals[index].second + 1)
+            if (index != -1) intervals[index].count += 1
         }
 
         val entries = mutableListOf<BarEntry>()
         var i = 0
         for (interval in intervals) {
-            if (interval.second == 0) continue
-            entries.add(BarEntry((++i).toFloat(), interval.second.toFloat()))
+            if (interval.count == 0) continue
+            entries.add(BarEntry((++i).toFloat(), interval.count.toFloat()))
         }
 
         val dataset = BarDataSet(entries, "Session Breakdown")
@@ -216,14 +214,21 @@ class AppUsageActivity : AppCompatActivity() {
         binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
     }
 
-    inner class SessionValueFormatter(private val sessionIntervals: MutableList<Pair<Triple<String, Long, Long?>, Int>>) :
+    inner class SessionValueFormatter(private val sessionIntervals: MutableList<SessionDuration>) :
         ValueFormatter() {
         override fun getFormattedValue(value: Float): String {
             return value.toString()
         }
 
         override fun getAxisLabel(value: Float, axis: AxisBase): String {
-            return sessionIntervals[value.toInt()].first.first
+            return sessionIntervals[value.toInt()].label
         }
     }
+
+    data class SessionDuration(
+        val label: String,
+        val minDurationSec: Long,
+        val maxDurationSec: Long?,
+        var count: Int = 0
+    )
 }
