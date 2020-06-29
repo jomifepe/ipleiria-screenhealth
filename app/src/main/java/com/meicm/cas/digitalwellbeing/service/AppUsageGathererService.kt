@@ -8,6 +8,9 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.IBinder
 import android.util.Log
+import com.meicm.cas.digitalwellbeing.AppState.isGatheringCategories
+import com.meicm.cas.digitalwellbeing.AppState.isGatheringUnlocks
+import com.meicm.cas.digitalwellbeing.AppState.isGatheringUsageStats
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
@@ -22,9 +25,6 @@ import com.meicm.cas.digitalwellbeing.util.setStartOfDay
 import java.util.*
 
 class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) {
-    var isGatheringUsageStats: Boolean = false
-    var isGatheringUnlocks: Boolean = false
-    var isGatheringCategories: Boolean = false
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -60,41 +60,41 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
         if (!isGatheringCategories) gatherAppCategories()
         if (!isGatheringUnlocks) loadUnlockEntries()
     }
-    
+
     private fun gatherUsageStats() {
         Log.d(Const.LOG_TAG, "[AppUsageGathererService] Starting to gather usage stats...")
         CoroutineScope(Dispatchers.IO + CoroutineName("GatherUsageStats")).launch {
-            isGatheringUsageStats = true
+                isGatheringUsageStats = true
 
-            val openSessions = AppDatabase
-                .getDatabase(this@AppUsageGathererService)
-                .appSessionDao()
-                .getOpenSessions()
-
-            /* Query the usage api to check if the open apps were closed since the last time
-               the database was updated */
-            closeOpenSessions(openSessions)
-
-            /* Get the last app session from the database */
-            val lastSession =
-                AppDatabase
+                val openSessions = AppDatabase
                     .getDatabase(this@AppUsageGathererService)
                     .appSessionDao()
-                    .getLastSession()
+                    .getOpenSessions()
 
-            val startTime = if (lastSession == null) {
-                //TODO: Choose a better start time it should be old
-                val cal = Calendar.getInstance()
-                cal.setStartOfDay()
-                cal.add(Calendar.DAY_OF_YEAR, -7)
-                cal.timeInMillis
-            } else {
-                lastSession.startTimestamp + 1
-            }
-            processUsageStats(startTime, System.currentTimeMillis())
+                /* Query the usage api to check if the open apps were closed since the last time
+               the database was updated */
+                closeOpenSessions(openSessions)
 
-            isGatheringUsageStats = false
-        }
+                /* Get the last app session from the database */
+                val lastSession =
+                    AppDatabase
+                        .getDatabase(this@AppUsageGathererService)
+                        .appSessionDao()
+                        .getLastSession()
+
+                val startTime = if (lastSession == null) {
+                    //TODO: Choose a better start time it should be old
+                    val cal = Calendar.getInstance()
+                    cal.setStartOfDay()
+                    cal.add(Calendar.DAY_OF_YEAR, -7)
+                    cal.timeInMillis
+                } else {
+                    lastSession.startTimestamp + 1
+                }
+                processUsageStats(startTime, System.currentTimeMillis())
+
+                isGatheringUsageStats = false
+       }
     }
 
     private fun closeOpenSessions(openSessions: List<AppSession>) {
