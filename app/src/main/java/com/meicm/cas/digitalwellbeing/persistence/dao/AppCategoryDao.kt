@@ -15,10 +15,10 @@ interface AppCategoryDao {
     @Query("SELECT category FROM Categories WHERE package = :packageName")
     fun getCategory(packageName: String): String?
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(appCategory: AppCategory)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(appCategory: List<AppCategory>)
 
     @Update

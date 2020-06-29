@@ -1,9 +1,11 @@
 package com.meicm.cas.digitalwellbeing.util
 
+import android.R.attr.targetPackage
 import android.app.ActivityManager
 import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import com.google.android.gms.location.ActivityTransition
@@ -15,19 +17,14 @@ import java.lang.StringBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 
+
 fun compareTimestampsDateEqual(timestamp1: Long, timestamp2: Long): Boolean {
     val cal1 = Calendar.getInstance()
     cal1.timeInMillis = timestamp1
-    cal1.set(Calendar.HOUR_OF_DAY, 0)
-    cal1.set(Calendar.MINUTE, 0)
-    cal1.set(Calendar.SECOND, 0)
-    cal1.set(Calendar.MILLISECOND, 0)
+    cal1.setStartOfDay()
     val cal2 = Calendar.getInstance()
     cal2.timeInMillis = timestamp2
-    cal2.set(Calendar.HOUR_OF_DAY, 0)
-    cal2.set(Calendar.MINUTE, 0)
-    cal2.set(Calendar.SECOND, 0)
-    cal2.set(Calendar.MILLISECOND, 0)
+    cal2.setStartOfDay()
 
     return cal1.timeInMillis == cal2.timeInMillis
 }
@@ -72,7 +69,7 @@ fun Calendar.setEndOfDay() {
     this.set(Calendar.MILLISECOND, 999)
 }
 
-private fun getDateStringFromEpoch(timestamp: Long, format: String): String {
+fun getDateStringFromEpoch(timestamp: Long, format: String): String {
     val cal = Calendar.getInstance()
     cal.timeInMillis = timestamp
     return SimpleDateFormat(format, Locale.getDefault()).format(cal.time)
@@ -106,6 +103,15 @@ fun isServiceRunning(context: Context, serviceClass: Class<out Service>): Boolea
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     return manager.getRunningServices(Integer.MAX_VALUE)
         .any { it.service.className == serviceClass.name }
+}
+
+fun isPackageInstalled(context: Context, packageName: String): Boolean {
+    try {
+        context.packageManager.getPackageInfo(packageName, PackageManager.GET_META_DATA)
+    } catch (e: PackageManager.NameNotFoundException) {
+        return false
+    }
+    return true
 }
 
 fun getStartOfDayCalendar(): Calendar {

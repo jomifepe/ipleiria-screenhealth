@@ -47,6 +47,7 @@ class UnlockService: Service() {
     }
 
     override fun onCreate() {
+        super.onCreate()
         val filter =
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
             filter.addAction(Intent.ACTION_SCREEN_OFF)
@@ -56,12 +57,11 @@ class UnlockService: Service() {
 
         startActivityRecognition()
 
-//        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
-        Log.d(Const.LOG_TAG, "[UnlockService] Registered broadcast receiver")
         Log.d(Const.LOG_TAG, "[UnlockService] Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
         Log.d(Const.LOG_TAG, "[UnlockService] On start command")
         when (intent?.action) {
             // send broadcast to trigger and "unlock" because the service was down

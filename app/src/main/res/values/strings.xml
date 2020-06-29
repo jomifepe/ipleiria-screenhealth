@@ -1,14 +1,18 @@
 <resources>
     <string name="app_name">DigitalWellbeing</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="label_snooze">Snooze</string>
     <string name="app_category_system">System</string>
     <string name="label_overview">Overview</string>
     <string name="label_insights">Insights</string>
     <string name="menu_settings">Settings</string>
-    <string name="label_screen_time">Screen Time</string>
-    <string name="label_screen_unlocks">Screen Unlocks</string>
-    <string name="label_app_launches">App Launches</string>
+    <string name="label_screen_time">Screen time</string>
+    <string name="label_screen_unlocks">Screen unlocks</string>
+    <string name="label_app_launches">App launches</string>
+    <string name="label_uninstalled">Uninstalled</string>
+    <string name="label_no_data_displayed">No data to be displayed</string>
+    <string name="message_snooze_warning">You have snoozed usage notifications for today</string>
+    <string name="label_unlock_sessions">Device unlock sessions</string>
+    <string name="label_app_sessions_title">App usage sessions</string>
+    <string name="label_per_app_usage_time">Per app usage time</string>
 </resources>
