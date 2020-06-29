@@ -21,6 +21,7 @@ import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.communication.MessageEvent
 import com.meicm.cas.digitalwellbeing.communication.TimeRangeMessageEvent
 import com.meicm.cas.digitalwellbeing.databinding.FragmentUsageStatisticsBinding
+import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
@@ -84,6 +85,7 @@ class UsageStatisticsFragment : Fragment() {
 
                 updateUnlocksWithinRange()
                 updateAppSessionsWithinRange()
+                updateSnoozeWarning()
             }
         }
     }
@@ -163,6 +165,7 @@ class UsageStatisticsFragment : Fragment() {
             screen_time.tv_value.text = totalTimeString
             app_launches.tv_value.text = totalLaunches.toString()
             appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
+            binding.tvNoData.visibility = if (appSessionList.size > 0) View.GONE else View.VISIBLE
             binding.pbPerAppUsage.visibility = View.GONE
             binding.appLaunches.progressBar.visibility = View.GONE
             binding.screenTime.progressBar.visibility = View.GONE
@@ -190,11 +193,27 @@ class UsageStatisticsFragment : Fragment() {
         binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
         binding.screenTime.tv_value.text = "0h"
         binding.unlockCount.tv_value.text = "0"
-        binding.appLaunches.tv_label.text = "0"
+        binding.appLaunches.tv_value.text = "0"
 
         binding.pbPerAppUsage.visibility = View.VISIBLE
         binding.appLaunches.progressBar.visibility = View.VISIBLE
         binding.screenTime.progressBar.visibility = View.VISIBLE
         binding.unlockCount.progressBar.visibility = View.VISIBLE
+
+        updateSnoozeWarning()
+    }
+
+    private fun updateSnoozeWarning() {
+        // if the time picker isn't on the current day, there's no need to show the snooze warning
+        if (!compareTimestampsDateEqual(startTime, System.currentTimeMillis())) {
+            binding.cvSnoozeWarning.visibility = View.GONE
+            return
+        }
+
+        val pref = AppPreferences.with(requireContext())
+        val snoozeTimestamp = pref.getLong(Const.PREF_KEY_SNOOZE_LONG, 0L)
+        binding.cvSnoozeWarning.visibility =
+            if (compareTimestampsDateEqual(snoozeTimestamp, System.currentTimeMillis())) View.VISIBLE
+            else View.GONE
     }
 }

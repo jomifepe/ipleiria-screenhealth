@@ -13,4 +13,5 @@
     <string name="label_app_launches">App Launches</string>
     <string name="label_uninstalled">Uninstalled</string>
     <string name="label_no_data_displayed">No data to be displayed</string>
+    <string name="message_snooze_warning">You have snoozed usage notification for today</string>
 </resources>
