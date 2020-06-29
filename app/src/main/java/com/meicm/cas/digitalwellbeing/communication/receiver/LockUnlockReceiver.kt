@@ -69,7 +69,7 @@ class LockUnlockReceiver : BroadcastReceiver() {
             AppDatabase
                 .getDatabase(context)
                 .unlockDao()
-                .insert(Unlock(0, AppState.unlockTime, null))
+                .insert(Unlock(0, AppState.unlockTime!!, null))
             Log.d(Const.LOG_TAG, "[LockUnlockReceiver] Inserted unlock into the database")
         }
 

@@ -32,7 +32,6 @@ class UnlockService: Service() {
         lockUnlockReceiver = LockUnlockReceiver()
         registerReceiver(lockUnlockReceiver, filter)
 
-        Toast.makeText(this, "[UnlockService] Service created", Toast.LENGTH_SHORT).show()
         Log.d(Const.LOG_TAG, "[UnlockService] Service created")
     }
 

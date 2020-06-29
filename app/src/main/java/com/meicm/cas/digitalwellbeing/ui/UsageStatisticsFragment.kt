@@ -76,13 +76,6 @@ class UsageStatisticsFragment : Fragment() {
                 this.startTime = event.startTimestamp
                 this.endTime = event.endTimestamp
 
-                val sdf = SimpleDateFormat("YYYY-MMM-dd HH:mm:ss", Locale.getDefault())
-                Log.d(
-                    Const.LOG_TAG,
-                    "Change to the time range: [Start: ${getDateTimeStringFromEpoch(this.startTime)}, " +
-                            "End: ${getDateTimeStringFromEpoch(this.endTime)}]"
-                )
-
                 updateUnlocksWithinRange()
                 updateAppSessionsWithinRange()
                 updateSnoozeWarning()
@@ -132,7 +125,7 @@ class UsageStatisticsFragment : Fragment() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
             unlockCount = result.size
             requireActivity().runOnUiThread {
-                unlock_count.tv_value.text = unlockCount.toString()
+                binding.unlockCount.tv_value.text = unlockCount.toString()
                 binding.unlockCount.progressBar.visibility = View.GONE
             }
         }
@@ -162,8 +155,8 @@ class UsageStatisticsFragment : Fragment() {
         val totalTimeString = getHoursMinutesSecondsString(totalScreenTime)
 
         requireActivity().runOnUiThread {
-            screen_time.tv_value.text = totalTimeString
-            app_launches.tv_value.text = totalLaunches.toString()
+            binding.appLaunches.tv_value.text = totalTimeString
+            binding.appLaunches.tv_value.text = totalLaunches.toString()
             appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
             binding.tvNoData.visibility = if (appSessionList.size > 0) View.GONE else View.VISIBLE
             binding.pbPerAppUsage.visibility = View.GONE

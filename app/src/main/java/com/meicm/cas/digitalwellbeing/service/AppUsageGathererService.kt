@@ -333,9 +333,8 @@ class AppUsageGathererService : IntentService(Const.SERVICE_NAME_DATA_GATHERER) 
                     previousUnlock = Unlock(0, event.timeStamp, null)
                 } else if (event.eventType == UsageEvents.Event.SCREEN_NON_INTERACTIVE) {
                     if (previousUnlock == null) continue
-                    if (previousUnlock.startTimestamp == null) continue
                     //if the diff between end and start timestamp is lower than 1s
-                    if (event.timeStamp - previousUnlock.startTimestamp!! < 1000) continue
+                    if (event.timeStamp - previousUnlock.startTimestamp < 1000) continue
 
                     previousUnlock.endTimestamp = event.timeStamp
                     listUnlocks.add(previousUnlock)

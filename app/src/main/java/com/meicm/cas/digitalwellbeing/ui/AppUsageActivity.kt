@@ -122,10 +122,6 @@ class AppUsageActivity : AppCompatActivity() {
     private fun incrementOrDecrementTimeRange(days: Int) {
         startTime.add(Calendar.DAY_OF_YEAR, days)
         endTime.add(Calendar.DAY_OF_YEAR, days)
-        Log.d(
-            Const.LOG_TAG, "start: ${getDateTimeStringFromEpoch(startTime.timeInMillis)}, " +
-                    "end: ${getDateTimeStringFromEpoch(endTime.timeInMillis)}"
-        )
         updateTimeRangeLabel()
         updateAppSessionsWithinRange()
     }
@@ -189,7 +185,7 @@ class AppUsageActivity : AppCompatActivity() {
         binding.screenTime.tv_label.text = getString(R.string.label_screen_time)
         binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
         binding.screenTime.tv_value.text = "0h"
-        binding.appLaunches.tv_label.text = "0"
+        binding.appLaunches.tv_value.text = "0"
 
         /* time picker */
         updateTimeRangeLabel()
@@ -222,6 +218,7 @@ class AppUsageActivity : AppCompatActivity() {
             sessionsChart!!.setPinchZoom(false)
             sessionsChart!!.setScaleEnabled(false)
             sessionsChart!!.setFitBars(true)
+            sessionsChart!!.setNoDataTextColor(ContextCompat.getColor(this, R.color.nordPolarNight4))
         }
     }
 

@@ -238,16 +238,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTimeRangeLabel() {
         time_picker.tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis, "MMM dd, YYYY")
-        if (rangeModifier >= 0) {
-            time_picker.bt_date_range_forward.visibility = View.INVISIBLE
-        } else {
-            time_picker.bt_date_range_forward.visibility = View.VISIBLE
-        }
-        if (rangeModifier <= -7) {
-            time_picker.bt_date_range_backwards.visibility = View.INVISIBLE
-        } else {
-            time_picker.bt_date_range_backwards.visibility = View.VISIBLE
-        }
+        time_picker.bt_date_range_forward.visibility =
+            if (rangeModifier >= 0) View.INVISIBLE else View.VISIBLE
+        time_picker.bt_date_range_backwards.visibility =
+            if (rangeModifier <= -7) View.INVISIBLE else View.VISIBLE
     }
 
     private fun createNotificationChannel() {
