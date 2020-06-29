@@ -1,6 +1,8 @@
 package com.meicm.cas.digitalwellbeing.ui
 
+import android.graphics.Color
 import android.os.Bundle
+import android.service.autofill.Dataset
 import android.util.Log
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +19,9 @@ import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.utils.ViewPortHandler
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.databinding.ActivityAppUsageBinding
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
@@ -41,6 +45,7 @@ class AppUsageActivity : AppCompatActivity() {
     private lateinit var endTime: Calendar
     private var appPackage: String? = null
     private var sessionsChart: HorizontalBarChart? = null
+    private var color: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,9 +53,12 @@ class AppUsageActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
+        color = ContextCompat.getColor(this, R.color.nordSnow1)
         appPackage = intent.getStringExtra(EXTRA_PACKAGE_NAME)
-        startTime = getCalendarFromMillis(intent.getLongExtra(EXTRA_START_TIME, System.currentTimeMillis()))
-        endTime = getCalendarFromMillis(intent.getLongExtra(EXTRA_END_TIME, System.currentTimeMillis()))
+        startTime =
+            getCalendarFromMillis(intent.getLongExtra(EXTRA_START_TIME, System.currentTimeMillis()))
+        endTime =
+            getCalendarFromMillis(intent.getLongExtra(EXTRA_END_TIME, System.currentTimeMillis()))
 
         supportActionBar?.title = getAppName(this, appPackage!!)
         try {
@@ -66,8 +74,16 @@ class AppUsageActivity : AppCompatActivity() {
         subscribeViewModel()
         updateAppSessionsWithinRange()
 
-        binding.timePicker.bt_date_range_backwards.setOnClickListener { incrementOrDecrementTimeRange(-1) }
-        binding.timePicker.bt_date_range_forward.setOnClickListener { incrementOrDecrementTimeRange(1) }
+        binding.timePicker.bt_date_range_backwards.setOnClickListener {
+            incrementOrDecrementTimeRange(
+                -1
+            )
+        }
+        binding.timePicker.bt_date_range_forward.setOnClickListener {
+            incrementOrDecrementTimeRange(
+                1
+            )
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -94,8 +110,10 @@ class AppUsageActivity : AppCompatActivity() {
     private fun incrementOrDecrementTimeRange(days: Int) {
         startTime.add(Calendar.DAY_OF_YEAR, days)
         endTime.add(Calendar.DAY_OF_YEAR, days)
-        Log.d(Const.LOG_TAG, "start: ${getDateTimeStringFromEpoch(startTime.timeInMillis)}, " +
-                "end: ${getDateTimeStringFromEpoch(endTime.timeInMillis)}")
+        Log.d(
+            Const.LOG_TAG, "start: ${getDateTimeStringFromEpoch(startTime.timeInMillis)}, " +
+                    "end: ${getDateTimeStringFromEpoch(endTime.timeInMillis)}"
+        )
         updateTimeRangeLabel()
         updateAppSessionsWithinRange()
     }
@@ -113,23 +131,36 @@ class AppUsageActivity : AppCompatActivity() {
 
     private fun calculateSessionDurations(data: List<AppSession>) {
         val intervals: MutableList<Pair<Triple<String, Long, Long?>, Int>> = mutableListOf(
-            Pair(Triple("< 1 min", 0L, 60L), 0), Pair(Triple("1-2 min", 60L, 120L), 0),
-            Pair(Triple("2-3 min", 120L, 180L), 0), Pair(Triple("3-5 min", 180L, 300L), 0),
-            Pair(Triple("5-10 min", 300L, 600L), 0), Pair(Triple("10-15 min", 600L, 900L), 0),
-            Pair(Triple("15-30 min", 900L, 1800L), 0), Pair(Triple("30-60 min", 1800L, 3600L), 0),
-            Pair(Triple("1-5 hour", 3600L, 18000L), 0), Pair(Triple("5+ hours", 18000L, null), 0)
+            Pair(Triple("< 1 min", 0L, 60L), 0), Pair(Triple("1-2 min", 61L, 120L), 0),
+            Pair(Triple("2-3 min", 121L, 180L), 0), Pair(Triple("3-5 min", 181L, 300L), 0),
+            Pair(Triple("5-10 min", 301L, 600L), 0), Pair(Triple("10-15 min", 601L, 900L), 0),
+            Pair(Triple("15-30 min", 901L, 1800L), 0), Pair(Triple("30-60 min", 1801L, 3600L), 0),
+            Pair(Triple("1-5 hour", 3601L, 18000L), 0), Pair(Triple("5+ hours", 18001L, null), 0)
         )
+
         for ((i, session) in data.withIndex()) {
-            val duration = ((session.endTimestamp ?: System.currentTimeMillis()) - session.startTimestamp) / 1000L
-            val index = intervals.indexOfFirst { duration in it.first.second..(it.first.third ?: System.currentTimeMillis()) }
-            if (index != -1) intervals[index] = intervals[index].copy(second = intervals[index].second + 1)
+            val duration = ((session.endTimestamp
+                ?: System.currentTimeMillis()) - session.startTimestamp) / 1000L
+            if (duration == 0L) continue
+            val index = intervals.indexOfFirst {
+                duration in it.first.second..(it.first.third ?: System.currentTimeMillis())
+            }
+            if (index != -1) intervals[index] =
+                intervals[index].copy(second = intervals[index].second + 1)
         }
-        val entries = intervals
-            .filter { it.second > 0 }
-            .map { BarEntry(it.first.second.toFloat(), it.second.toFloat()) }
+
+        val entries = mutableListOf<BarEntry>()
+        var i = 0
+        for (interval in intervals) {
+            if (interval.second == 0) continue
+            entries.add(BarEntry((++i).toFloat(), interval.second.toFloat()))
+        }
+
         val dataset = BarDataSet(entries, "Session Breakdown")
+
         val barData = BarData(dataset)
-        barData.barWidth = 500f / intervals.size
+        barData.barWidth = 0.9f
+        barData.setValueTextColor(color!!)
 
         sessionsChart!!.xAxis.valueFormatter = SessionValueFormatter(intervals)
         sessionsChart!!.xAxis.labelCount = entries.size
@@ -148,21 +179,26 @@ class AppUsageActivity : AppCompatActivity() {
             xAxis.position = XAxisPosition.BOTTOM
             xAxis.setDrawAxisLine(true)
             xAxis.setDrawGridLines(false)
-            xAxis.granularity = 5f
-            xAxis.textColor = ContextCompat.getColor(this, R.color.nordSnow1)
+            xAxis.granularity = 1f
+            xAxis.textColor = color!!
 
             val yAxisLeft: YAxis = sessionsChart!!.axisLeft
             yAxisLeft.setDrawAxisLine(true)
             yAxisLeft.setDrawGridLines(true)
             yAxisLeft.axisMinimum = 0f // this replaces setStartAtZero(true)
-            yAxisLeft.textColor = ContextCompat.getColor(this, R.color.nordSnow1)
+            yAxisLeft.textColor = color!!
+            yAxisLeft.isEnabled = false
 
             val yAxisRight: YAxis = sessionsChart!!.axisRight
             yAxisRight.setDrawAxisLine(true)
-            yAxisRight.setDrawGridLines(false)
+            yAxisRight.setDrawGridLines(true)
             yAxisRight.axisMinimum = 0f // this replaces setStartAtZero(true)
-            yAxisRight.textColor = ContextCompat.getColor(this, R.color.nordSnow1)
+            yAxisRight.textColor = color!!
 
+            sessionsChart!!.legend.isEnabled = false
+            sessionsChart!!.description.isEnabled = false
+            sessionsChart!!.setPinchZoom(false)
+            sessionsChart!!.setScaleEnabled(false)
             sessionsChart!!.setFitBars(true)
         }
     }
@@ -180,19 +216,14 @@ class AppUsageActivity : AppCompatActivity() {
         binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
     }
 
-    inner class SessionValueFormatter(
-        private val sessionIntervals: MutableList<Pair<Triple<String, Long, Long?>, Int>>
-    ) : ValueFormatter() {
-
+    inner class SessionValueFormatter(private val sessionIntervals: MutableList<Pair<Triple<String, Long, Long?>, Int>>) :
+        ValueFormatter() {
         override fun getFormattedValue(value: Float): String {
             return value.toString()
         }
 
         override fun getAxisLabel(value: Float, axis: AxisBase): String {
-            val valueLong = value.toLong()
-            return sessionIntervals.find {
-                valueLong in it.first.second..(it.first.third ?: System.currentTimeMillis())
-            }?.first?.first ?: "None"
+            return sessionIntervals[value.toInt()].first.first
         }
     }
 }
