@@ -47,6 +47,10 @@ class UsageViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun getAppCategory(packageName: String, callback: (String?) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        callback(repository.getAppCategory(packageName))
+    }
+
     fun categorizeApplications(appPackages: List<String>) = viewModelScope.launch(Dispatchers.IO) {
         repository.categorizeApplications(appPackages)
     }

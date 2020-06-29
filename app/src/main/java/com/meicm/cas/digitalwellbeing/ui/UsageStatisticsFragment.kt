@@ -42,7 +42,6 @@ class UsageStatisticsFragment : Fragment() {
     private lateinit var appTimeAdapter: AppTimeUsageRecyclerAdapter
     private lateinit var usageViewModel: UsageViewModel
 
-    private var appSessions: HashMap<String, MutableList<AppSession>> = hashMapOf()
     private var appCategories: List<AppCategory> = listOf()
     private var unlockCount: Int = 0
 
@@ -111,15 +110,19 @@ class UsageStatisticsFragment : Fragment() {
         usageViewModel = ViewModelProvider(this).get(UsageViewModel::class.java)
 
         usageViewModel.allUnlocks.observe(viewLifecycleOwner, Observer {
-            it?.let { updateUnlocksWithinRange() }
+            if (it != null) updateUnlocksWithinRange()
+            else requireActivity().runOnUiThread { binding.screenTime.progressBar.visibility = View.GONE }
         })
         usageViewModel.appCategories.observe(viewLifecycleOwner, Observer { data ->
-            data?.let {
-                this.appCategories = data
-            }
+            data?.let { this.appCategories = data }
         })
         usageViewModel.appSessions.observe(viewLifecycleOwner, Observer {
-            it?.let { updateAppSessionsWithinRange() }
+            if (it != null) updateAppSessionsWithinRange()
+            else requireActivity().runOnUiThread {
+                binding.pbPerAppUsage.visibility = View.GONE
+                binding.appLaunches.progressBar.visibility = View.GONE
+                binding.screenTime.progressBar.visibility = View.GONE
+            }
         })
     }
 
@@ -128,11 +131,13 @@ class UsageStatisticsFragment : Fragment() {
             unlockCount = result.size
             requireActivity().runOnUiThread {
                 unlock_count.tv_value.text = unlockCount.toString()
+                binding.unlockCount.progressBar.visibility = View.GONE
             }
         }
     }
 
     private fun updateAppSessionsWithinRange() {
+        Log.d(Const.LOG_TAG, "updateAppSessionsWithinRange")
         usageViewModel.getAppSessions(this.startTime, this.endTime) {
             calculateTotalTimes(it)
         }
@@ -158,6 +163,9 @@ class UsageStatisticsFragment : Fragment() {
             screen_time.tv_value.text = totalTimeString
             app_launches.tv_value.text = totalLaunches.toString()
             appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
+            binding.pbPerAppUsage.visibility = View.GONE
+            binding.appLaunches.progressBar.visibility = View.GONE
+            binding.screenTime.progressBar.visibility = View.GONE
         }
     }
 
@@ -180,5 +188,13 @@ class UsageStatisticsFragment : Fragment() {
         binding.screenTime.tv_label.text = getString(R.string.label_screen_time)
         binding.unlockCount.tv_label.text = getString(R.string.label_screen_unlocks)
         binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
+        binding.screenTime.tv_value.text = "0h"
+        binding.unlockCount.tv_value.text = "0"
+        binding.appLaunches.tv_label.text = "0"
+
+        binding.pbPerAppUsage.visibility = View.VISIBLE
+        binding.appLaunches.progressBar.visibility = View.VISIBLE
+        binding.screenTime.progressBar.visibility = View.VISIBLE
+        binding.unlockCount.progressBar.visibility = View.VISIBLE
     }
 }

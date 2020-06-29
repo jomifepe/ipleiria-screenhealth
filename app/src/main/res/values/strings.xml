@@ -11,4 +11,6 @@
     <string name="label_screen_time">Screen Time</string>
     <string name="label_screen_unlocks">Screen Unlocks</string>
     <string name="label_app_launches">App Launches</string>
+    <string name="label_uninstalled">Uninstalled</string>
+    <string name="label_no_data_displayed">No data to be displayed</string>
 </resources>

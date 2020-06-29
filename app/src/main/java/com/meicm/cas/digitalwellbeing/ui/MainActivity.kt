@@ -237,7 +237,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTimeRangeLabel() {
-        time_picker.tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis)
+        time_picker.tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis, "MMM dd, YYYY")
         if (rangeModifier >= 0) {
             time_picker.bt_date_range_forward.visibility = View.INVISIBLE
         } else {

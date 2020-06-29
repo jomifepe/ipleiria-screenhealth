@@ -90,4 +90,8 @@ class DataRepository(
         if (unlocksDao.getLastUnlock() != null) return
         unlocksDao.insertAll(unlocks)
     }
+
+    fun getAppCategory(packageName: String): String? {
+        return appCategoryDao.getCategory(packageName)
+    }
 }

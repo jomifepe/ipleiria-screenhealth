@@ -1,13 +1,10 @@
 package com.meicm.cas.digitalwellbeing.ui
 
-import android.graphics.Color
 import android.os.Bundle
-import android.service.autofill.Dataset
 import android.util.Log
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -19,16 +16,19 @@ import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
-import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.formatter.ValueFormatter
-import com.github.mikephil.charting.utils.ViewPortHandler
 import com.meicm.cas.digitalwellbeing.R
 import com.meicm.cas.digitalwellbeing.databinding.ActivityAppUsageBinding
+import com.meicm.cas.digitalwellbeing.persistence.entity.AppCategory
 import com.meicm.cas.digitalwellbeing.persistence.entity.AppSession
 import com.meicm.cas.digitalwellbeing.util.*
 import com.meicm.cas.digitalwellbeing.viewmodel.UsageViewModel
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.partial_time_picker.view.*
 import kotlinx.android.synthetic.main.partial_title_subtitle_card.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.*
 
 
@@ -61,6 +61,7 @@ class AppUsageActivity : AppCompatActivity() {
             getCalendarFromMillis(intent.getLongExtra(EXTRA_END_TIME, System.currentTimeMillis()))
 
         supportActionBar?.title = getAppName(this, appPackage!!)
+
         try {
             val applicationIcon = getApplicationIcon(this, appPackage!!)
             supportActionBar?.setIcon(applicationIcon)
@@ -68,21 +69,16 @@ class AppUsageActivity : AppCompatActivity() {
             Log.d(Const.LOG_TAG, "Couldn't find icon for app ${appPackage}")
         }
 
-        setupChart()
         initializeViews()
-        setupTimePicker()
         subscribeViewModel()
+        loadAppCategory()
         updateAppSessionsWithinRange()
 
         binding.timePicker.bt_date_range_backwards.setOnClickListener {
-            incrementOrDecrementTimeRange(
-                -1
-            )
+            incrementOrDecrementTimeRange(-1)
         }
         binding.timePicker.bt_date_range_forward.setOnClickListener {
-            incrementOrDecrementTimeRange(
-                1
-            )
+            incrementOrDecrementTimeRange(1)
         }
     }
 
@@ -98,12 +94,28 @@ class AppUsageActivity : AppCompatActivity() {
         viewModel.appSessions.observe(this, Observer {
             it?.let { updateAppSessionsWithinRange() }
         })
+        viewModel.appCategories.observe(this, Observer {
+            it?.let { updateAppCategory(it) }
+        })
+    }
+
+    private fun updateAppCategory(categories: List<AppCategory>) {
+        val category = categories.find { it.appPackage == this.appPackage }
+        supportActionBar?.subtitle = category?.category
     }
 
     private fun updateAppSessionsWithinRange() {
         viewModel.getAppSessions(appPackage!!, startTime.timeInMillis, endTime.timeInMillis) {
             calculateTotalTimes(it)
             calculateSessionDurations(it)
+        }
+    }
+
+    private fun loadAppCategory() {
+        CoroutineScope(Dispatchers.IO).launch {
+            viewModel.getAppCategory(appPackage!!) { category ->
+                runOnUiThread { supportActionBar?.subtitle = category }
+            }
         }
     }
 
@@ -141,6 +153,7 @@ class AppUsageActivity : AppCompatActivity() {
         for (session in data) {
             val duration = ((session.endTimestamp ?: System.currentTimeMillis()) - session.startTimestamp) / 1000L
             if (duration == 0L) continue
+            intervals.find { duration in it.minDurationSec..(it.maxDurationSec ?: System.currentTimeMillis()) }
             val index = intervals.indexOfFirst {
                 duration in it.minDurationSec..(it.maxDurationSec ?: System.currentTimeMillis())
             }
@@ -148,20 +161,18 @@ class AppUsageActivity : AppCompatActivity() {
         }
 
         val entries = mutableListOf<BarEntry>()
-        var i = 0
+        var barCount = 0
         for (interval in intervals) {
             if (interval.count == 0) continue
-            entries.add(BarEntry((++i).toFloat(), interval.count.toFloat()))
+            entries.add(BarEntry((++barCount).toFloat(), interval.count.toFloat()))
         }
 
-        val dataset = BarDataSet(entries, "Session Breakdown")
-
-        val barData = BarData(dataset)
+        val barData = BarData(BarDataSet(entries, "Session Breakdown"))
         barData.barWidth = 0.9f
         barData.setValueTextColor(color!!)
 
         sessionsChart!!.xAxis.valueFormatter = SessionValueFormatter(intervals)
-        sessionsChart!!.xAxis.labelCount = entries.size
+        sessionsChart!!.xAxis.labelCount = barCount
 
         runOnUiThread {
             sessionsChart!!.data = barData
@@ -170,7 +181,20 @@ class AppUsageActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupChart() {
+    private fun updateTimeRangeLabel() {
+        binding.timePicker.tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis, "MMM dd, YYYY")
+    }
+
+    private fun initializeViews() {
+        binding.screenTime.tv_label.text = getString(R.string.label_screen_time)
+        binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
+        binding.screenTime.tv_value.text = "0h"
+        binding.appLaunches.tv_label.text = "0"
+
+        /* time picker */
+        updateTimeRangeLabel()
+
+        /* charts */
         sessionsChart = binding.chartAppSessions
         sessionsChart?.let {
             val xAxis: XAxis = sessionsChart!!.xAxis
@@ -199,19 +223,6 @@ class AppUsageActivity : AppCompatActivity() {
             sessionsChart!!.setScaleEnabled(false)
             sessionsChart!!.setFitBars(true)
         }
-    }
-
-    private fun updateTimeRangeLabel() {
-        binding.timePicker.tv_date_range.text = getDateStringFromEpoch(startTime.timeInMillis)
-    }
-
-    private fun setupTimePicker() {
-        updateTimeRangeLabel()
-    }
-
-    private fun initializeViews() {
-        binding.screenTime.tv_label.text = getString(R.string.label_screen_time)
-        binding.appLaunches.tv_label.text = getString(R.string.label_app_launches)
     }
 
     inner class SessionValueFormatter(private val sessionIntervals: MutableList<SessionDuration>) :
