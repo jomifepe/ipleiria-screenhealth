@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.opengl.Visibility
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -53,7 +52,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usageGathererServiceIntent: Intent
 
     private var recognitionIntent = Intent()
-    private var recognitionService: ActivityRecognitionIntentService = ActivityRecognitionIntentService()
+    private var recognitionService: ActivityRecognitionIntentService =
+        ActivityRecognitionIntentService()
 
     init {
         startTime = getStartOfDayCalendar()
@@ -101,11 +101,6 @@ class MainActivity : AppCompatActivity() {
         super.onBackPressed()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        stopService(unlocksServiceIntent)
-        stopService(usageGathererServiceIntent)
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -147,7 +142,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         builder.setNegativeButton(android.R.string.cancel) { dialog, which ->
-            Toast.makeText(this, "Sorry, but without usage access this app won't show anything", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Sorry, but without usage access this app won't show anything",
+                Toast.LENGTH_LONG
+            ).show()
         }
 
         builder.show()
@@ -179,7 +178,7 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.myNavHostFragment)
         bottom_navigation_view.setupWithNavController(navController)
         val appBarConfiguration = AppBarConfiguration(
-            topLevelDestinationIds = setOf (
+            topLevelDestinationIds = setOf(
                 R.id.fragment_usage_statistics,
                 R.id.fragment_insights
             )
@@ -188,9 +187,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        Log.d(Const.LOG_TAG, "On destroy")
-        stopService(recognitionIntent)
         super.onDestroy()
+        Log.d(Const.LOG_TAG, "[Main Activity] On destroy")
+        stopService(unlocksServiceIntent)
+        stopService(usageGathererServiceIntent)
+        stopService(recognitionIntent)
     }
 
     private fun startActivityRecognitionService() {
@@ -212,7 +213,8 @@ class MainActivity : AppCompatActivity() {
         rangeModifier += days
         startTime.add(Calendar.DAY_OF_YEAR, days)
         endTime.add(Calendar.DAY_OF_YEAR, days)
-        EventBus.getDefault().post(TimeRangeMessageEvent(startTime.timeInMillis, endTime.timeInMillis))
+        EventBus.getDefault()
+            .post(TimeRangeMessageEvent(startTime.timeInMillis, endTime.timeInMillis))
         updateTimeRangeLabel()
     }
 

@@ -20,7 +20,6 @@ import com.google.android.gms.location.ActivityTransition.ACTIVITY_TRANSITION_EN
 import com.google.android.gms.location.ActivityTransition.ACTIVITY_TRANSITION_EXIT
 import com.meicm.cas.digitalwellbeing.communication.receiver.LockUnlockReceiver
 import com.meicm.cas.digitalwellbeing.AppState
-import com.meicm.cas.digitalwellbeing.communication.receiver.LockUnlockReceiver
 import com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.util.Const
@@ -52,15 +51,18 @@ class UnlockService: Service() {
             IntentFilter(Const.ACTION_FIRST_LAUNCH)
             filter.addAction(Intent.ACTION_SCREEN_OFF)
             filter.addAction(Intent.ACTION_SCREEN_ON)
-        registerReceiver(LockUnlockReceiver(), filter)
+        lockUnlockReceiver = LockUnlockReceiver()
+        registerReceiver(lockUnlockReceiver, filter)
 
         startActivityRecognition()
 
 //        if (isAppFirstRun(this)) sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
         Log.d(Const.LOG_TAG, "[UnlockService] Registered broadcast receiver")
+        Log.d(Const.LOG_TAG, "[UnlockService] Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(Const.LOG_TAG, "[UnlockService] On start command")
         when (intent?.action) {
             // send broadcast to trigger and "unlock" because the service was down
             Const.ACTION_FIRST_LAUNCH -> sendBroadcast(Intent(Const.ACTION_FIRST_LAUNCH))
@@ -74,15 +76,12 @@ class UnlockService: Service() {
         saveCurrentUsageWarningTimer()
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
-
     override fun onDestroy() {
-        super.onDestroy()
+        //super.onDestroy()
         Log.d(Const.LOG_TAG, "[UnlockService] Unlock Service destroyed")
         stopActivityRecognition()
-        tryToDestroyReceiver()
+        unregisterReceiver(lockUnlockReceiver)
+        sendBroadcast(Intent(this, UnlockServiceRestartReceiver::class.java))
     }
 
     private fun saveCurrentUsageWarningTimer() {

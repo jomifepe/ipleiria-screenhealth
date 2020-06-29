@@ -146,9 +146,8 @@ class UsageStatisticsFragment : Fragment() {
         usageViewModel.getUnlocks(this.startTime, this.endTime) { result ->
             unlockCount = result.size
             requireActivity().runOnUiThread {
+                unlock_count.tv_value.text = unlockCount.toString()
             }
-            //  }
-            //
         }
     }
 
