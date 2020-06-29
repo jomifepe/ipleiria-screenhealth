@@ -109,7 +109,6 @@ class UnlockService: Service() {
 
     private fun startActivityRecognition() {
         try {
-            Toast.makeText(this, "#####startActivityRecognition#####", Toast.LENGTH_SHORT).show()
             Log.d(
                 Const.LOG_TAG,
                 "#####startActivityRecognition#####"

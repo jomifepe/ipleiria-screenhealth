@@ -11,7 +11,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.os.Handler
 import android.os.PowerManager
 import android.provider.Settings
@@ -111,14 +110,6 @@ class MainActivity : AppCompatActivity() {
         super.onBackPressed()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(Const.LOG_TAG, "[MainActivity] onDestroy")
-
-        stopService(unlocksServiceIntent)
-        stopService(usageGathererServiceIntent)
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
@@ -130,6 +121,14 @@ class MainActivity : AppCompatActivity() {
                 if (!isIgnoringBatteryOptimizations()) showBatteryOptimizationWarning()
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(Const.LOG_TAG, "[Main Activity] On destroy")
+        stopService(unlocksServiceIntent)
+        stopService(usageGathererServiceIntent)
+        stopService(recognitionIntent)
     }
 
     private fun triggerDataGathering() {
@@ -232,14 +231,6 @@ class MainActivity : AppCompatActivity() {
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(Const.LOG_TAG, "[Main Activity] On destroy")
-        stopService(unlocksServiceIntent)
-        stopService(usageGathererServiceIntent)
-        stopService(recognitionIntent)
     }
 
     private fun startActivityRecognitionService() {

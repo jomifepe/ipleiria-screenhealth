@@ -133,7 +133,6 @@ class UsageStatisticsFragment : Fragment() {
     }
 
     private fun updateAppSessionsWithinRange() {
-        Log.d(Const.LOG_TAG, "updateAppSessionsWithinRange")
         usageViewModel.getAppSessions(this.startTime, this.endTime) {
             calculateTotalTimes(it)
         }
@@ -156,7 +155,7 @@ class UsageStatisticsFragment : Fragment() {
         val totalTimeString = getHoursMinutesSecondsString(totalScreenTime)
 
         requireActivity().runOnUiThread {
-            binding.appLaunches.tv_value.text = totalTimeString
+            binding.screenTime.tv_value.text = totalTimeString
             binding.appLaunches.tv_value.text = totalLaunches.toString()
             appTimeAdapter.list = appSessionList.toList().sortedByDescending { it.second }
             binding.tvNoData.visibility = if (appSessionList.size > 0) View.GONE else View.VISIBLE

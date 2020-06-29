@@ -25,17 +25,11 @@ class ActivityRecognitionIntentService : IntentService(Const.SERVICE_NAME_ACTIVI
     private val acceptableConfidence: Int = 70
 
     override fun onHandleIntent(intent: Intent?) {
-
-        Toast.makeText(this, "CHEGOU AO SERVICO DE ACTIVITY RECOGNITION", Toast.LENGTH_SHORT).show()
-
-        Log.d(Const.LOG_TAG, "onHandleIntent")
         handleActivityTransition(intent)
         handleActivityRecognition(intent)
     }
 
     private fun handleActivityRecognition(intent: Intent?) {
-        Log.d(Const.LOG_TAG, "handleActivityRecognition")
-
         if (!ActivityRecognitionResult.hasResult(intent)) return
         val result: ActivityRecognitionResult = ActivityRecognitionResult.extractResult(intent)
         val detectedActivities: MutableList<DetectedActivity> = result.probableActivities

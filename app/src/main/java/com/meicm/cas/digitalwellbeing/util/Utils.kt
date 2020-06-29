@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.util.Log
 import com.google.android.gms.location.ActivityTransition
 import com.google.android.gms.location.DetectedActivity
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
@@ -140,7 +141,7 @@ fun analyseNotificationCondition(
 ): Boolean {
 
     val numberOfValidSessions = sessions.count { isValidSession(context, it) }
-    //Log.d(Const.LOG_TAG, "PERCENTAGE: ${numberOfValidSessions.toDouble() / sessions.size}")
+//    Log.d(Const.LOG_TAG, "PERCENTAGE: ${numberOfValidSessions.toDouble() / sessions.size}")
     return (numberOfValidSessions.toDouble() / sessions.size) < Const.ALLOWED_APPS_PERCENTAGE && validateCurrentActivity(
         context
     )
@@ -148,7 +149,7 @@ fun analyseNotificationCondition(
 
 fun isValidSession(context: Context, session: AppSessionWithCategory): Boolean {
     val appInfo = context.packageManager.getApplicationInfo(session.appSession.appPackage, 0)
-    //Log.d(Const.LOG_TAG, "Session: ${session.appCategory.appPackage} from ${session.appSession.startTimestamp} category: ${session.appCategory.category}")
+//    Log.d(Const.LOG_TAG, "Session: ${session.appCategory.appPackage} from ${session.appSession.startTimestamp} category: ${session.appCategory.category}")
     return (isSystemApp(appInfo) || (session.appCategory.category != null && UW_ALLOWED_CATEGORIES.contains(
         session.appCategory.category!!
     )))

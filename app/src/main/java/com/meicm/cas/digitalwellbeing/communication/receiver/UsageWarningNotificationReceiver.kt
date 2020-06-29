@@ -41,8 +41,10 @@ class UsageWarningNotificationReceiver : BroadcastReceiver() {
 
             val builder = NotificationCompat.Builder(context!!, Const.NOTIFICATION_CHANNEL_GENERAL)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Usage Warning #$currentNotificationId")
-                .setContentText("You've been using your device for a long period of time. If you're not doing something important, consider resting for a bit.")
+                .setContentTitle("Usage Warning")
+                .setStyle(NotificationCompat.BigTextStyle()
+                        .bigText("You've been using your device for a long period of time. " +
+                                "If you're not doing something important, consider resting for a bit."))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .addAction(
                     R.drawable.ic_snooze_black, context.getString(

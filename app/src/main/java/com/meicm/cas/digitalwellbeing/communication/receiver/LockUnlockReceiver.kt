@@ -7,12 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.GoogleApiAvailability
-import com.google.android.gms.common.api.GoogleApiActivity
-import com.google.android.gms.location.*
-import com.google.android.gms.location.ActivityTransition.*
-import com.google.android.gms.location.DetectedActivity.*
 import com.meicm.cas.digitalwellbeing.AppState
 import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences

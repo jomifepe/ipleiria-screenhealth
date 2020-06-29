@@ -41,7 +41,6 @@ class AppTimeUsageRecyclerAdapter(onShortClick: RecyclerViewItemShortClick):
         try {
             holder.icon.setImageDrawable(getApplicationIcon(holder.icon.context, data.first))
         } catch (ex: Exception) {}
-        Log.d(Const.LOG_TAG, "onBindViewHolder")
     }
 
     class ViewHolder (view: View): RecyclerView.ViewHolder(view) {
