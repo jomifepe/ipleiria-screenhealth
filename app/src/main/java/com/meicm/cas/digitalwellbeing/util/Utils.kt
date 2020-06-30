@@ -2,6 +2,7 @@ package com.meicm.cas.digitalwellbeing.util
 
 import android.R.attr.targetPackage
 import android.app.ActivityManager
+import android.app.AppOpsManager
 import android.app.Service
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -191,6 +192,22 @@ fun transactionTypeToString(transactionType: Int): String {
         }
     }
 }
+
+fun hasUsagePermission(context: Context): Boolean {
+    return try {
+        val applicationInfo = context.packageManager.getApplicationInfo(context.packageName, 0)
+        val appOpsManager = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOpsManager.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            applicationInfo.uid,
+            applicationInfo.packageName
+        )
+        mode == AppOpsManager.MODE_ALLOWED
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
+    }
+}
+
 
 fun isSystemApp(app: ApplicationInfo): Boolean {
     return app.flags and ApplicationInfo.FLAG_SYSTEM != 0

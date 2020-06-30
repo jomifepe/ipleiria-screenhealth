@@ -165,21 +165,6 @@ class UsageStatisticsFragment : Fragment() {
         }
     }
 
-    private fun hasUsagePermission(): Boolean {
-        return try {
-            val applicationInfo = requireContext().packageManager.getApplicationInfo(requireContext().packageName, 0)
-            val appOpsManager = requireContext().getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-            val mode = appOpsManager.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                applicationInfo.uid,
-                applicationInfo.packageName
-            )
-            mode == AppOpsManager.MODE_ALLOWED
-        } catch (e: PackageManager.NameNotFoundException) {
-            false
-        }
-    }
-
     private fun setupStaticViews() {
         binding.screenTime.tv_label.text = getString(R.string.label_screen_time)
         binding.unlockCount.tv_label.text = getString(R.string.label_screen_unlocks)

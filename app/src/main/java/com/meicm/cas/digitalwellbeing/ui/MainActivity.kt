@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         time_picker.bt_date_range_forward.setOnClickListener { incrementOrDecrementTimeRange(1) }
 
 
-        if (!hasUsagePermission()) {
+        if (!hasUsagePermission(this)) {
             showUsagePermissionDialog()
         } else if (!isIgnoringBatteryOptimizations()) {
             showBatteryOptimizationDialog()
@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             PERMISSIONS_REQUEST_USAGE_STATS -> {
-                if (!hasUsagePermission()) showNoUsagePermissionWarning()
+                if (!hasUsagePermission(this)) showNoUsagePermissionWarning()
                 if (!isIgnoringBatteryOptimizations()) showBatteryOptimizationDialog()
             }
             PERMISSIONS_REQUEST_BATTERY_OPTIMIZATION -> {
@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun triggerDataGathering() {
-        if (!hasUsagePermission()) return
+        if (!hasUsagePermission(this)) return
         startService(Intent(this, AppUsageGathererService::class.java))
     }
 
@@ -204,21 +204,6 @@ class MainActivity : AppCompatActivity() {
     private fun isIgnoringBatteryOptimizations(): Boolean {
         val pm: PowerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         return pm.isIgnoringBatteryOptimizations(packageName)
-    }
-
-    private fun hasUsagePermission(): Boolean {
-        return try {
-            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
-            val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-            val mode = appOpsManager.checkOpNoThrow(
-                AppOpsManager.OPSTR_GET_USAGE_STATS,
-                applicationInfo.uid,
-                applicationInfo.packageName
-            )
-            mode == AppOpsManager.MODE_ALLOWED
-        } catch (e: PackageManager.NameNotFoundException) {
-            false
-        }
     }
 
     private fun setupNavigation() {

@@ -12,6 +12,7 @@ import com.meicm.cas.digitalwellbeing.persistence.AppDatabase
 import com.meicm.cas.digitalwellbeing.persistence.AppPreferences
 import com.meicm.cas.digitalwellbeing.persistence.entity.Unlock
 import com.meicm.cas.digitalwellbeing.service.ActivityRecognitionIntentService
+import com.meicm.cas.digitalwellbeing.service.AppUsageGathererService
 import com.meicm.cas.digitalwellbeing.util.*
 import com.meicm.cas.digitalwellbeing.util.Const.ACTIVITY_UPDATE_TIME
 import kotlinx.coroutines.*
@@ -48,7 +49,6 @@ class LockUnlockReceiver : BroadcastReceiver() {
 
         saveCurrentUsageWarningTimer(context, lockTime)
         saveLockTime(context, lockTime)
-        // TODO: Fix no alarm clear when the app is killed
 
         // Cancel existing alarm
         val pi = PendingIntent.getBroadcast(context, 0,
@@ -77,6 +77,9 @@ class LockUnlockReceiver : BroadcastReceiver() {
         }
 
         tryLaunchUsageWarningTimer(context)
+        if (hasUsagePermission(context)) {
+            context.startService(Intent(context, AppUsageGathererService::class.java))
+        }
     }
 
     /**
