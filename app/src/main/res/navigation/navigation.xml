@@ -7,13 +7,13 @@
 
     <fragment
         android:id="@+id/fragment_usage_statistics"
-        android:name="com.meicm.cas.digitalwellbeing.ui.UsageStatisticsFragment"
+        android:name="com.meicm.cas.screenhealth.ui.UsageStatisticsFragment"
         android:label="Usage Statistics"
         tools:layout="@layout/fragment_usage_statistics" />
 
     <fragment
         android:id="@+id/fragment_insights"
-        android:name="com.meicm.cas.digitalwellbeing.ui.InsightsFragment"
+        android:name="com.meicm.cas.screenhealth.ui.InsightsFragment"
         android:label="Usage Insights"
         tools:layout="@layout/fragment_insights" />
 

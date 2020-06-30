@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.meicm.cas.digitalwellbeing">
+    package="com.meicm.cas.screenhealth">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
@@ -20,8 +20,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ui.AppUsageActivity" />
-        <activity android:name=".ui.MainActivity">
+        <activity android:name="com.meicm.cas.screenhealth.ui.AppUsageActivity" />
+        <activity android:name="com.meicm.cas.screenhealth.ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -29,31 +29,31 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".service.UnlockService"
+            android:name="com.meicm.cas.screenhealth.service.UnlockService"
             android:enabled="true"
             android:exported="true" />
         <service
-            android:name=".service.AppUsageGathererService"
+            android:name="com.meicm.cas.screenhealth.service.AppUsageGathererService"
             android:enabled="true"
             android:exported="true" />
         <service
-            android:name=".service.ActivityRecognitionIntentService"
+            android:name="com.meicm.cas.screenhealth.service.ActivityRecognitionIntentService"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UsageWarningNotificationReceiver"
+            android:name="com.meicm.cas.screenhealth.communication.receiver.UsageWarningNotificationReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.NotificationSnoozeButtonReceiver"
+            android:name="com.meicm.cas.screenhealth.communication.receiver.NotificationSnoozeButtonReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.UnlockServiceRestartReceiver"
+            android:name="com.meicm.cas.screenhealth.communication.receiver.UnlockServiceRestartReceiver"
             android:enabled="true"
             android:exported="true" />
         <receiver
-            android:name="com.meicm.cas.digitalwellbeing.communication.receiver.ActivityRecognitionReceiver"
+            android:name="com.meicm.cas.screenhealth.communication.receiver.ActivityRecognitionReceiver"
             android:enabled="true"
             android:exported="true" />
     </application>

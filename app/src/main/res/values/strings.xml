@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DigitalWellbeing</string>
+    <string name="app_name">ScreenHealth</string>
 
     <string name="label_snooze">Snooze</string>
     <string name="app_category_system">System</string>
