@@ -4,3 +4,8 @@ University project - An Android application that tracks, analyses and displays a
 
 ## Sample screenshot
 ![](screenshot.jpg)
+
+## Authors
+[Ivo Santos](https://github.com/Mikeloka) & [José Pereira](https://github.com/jomifepe)
+
+@2020
